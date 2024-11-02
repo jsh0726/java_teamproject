@@ -30,7 +30,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
         Pane root = new Pane();
-        //test
+        //test wjsjdkfjslfkjflaskdjfa;slkdflkcxcxmkdoo
         // 고정된 배경 이미지 설정
         Image backgroundImage = new Image(getClass().getResource("background.png").toExternalForm());
         ImageView background = new ImageView(backgroundImage);
