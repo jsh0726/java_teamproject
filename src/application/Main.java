@@ -9,7 +9,7 @@ public class Main extends Application {
         // 초기 화면 설정: MainMenu
         MainMenu mainMenu = new MainMenu();
         primaryStage.setScene(mainMenu.getScene(primaryStage)); // 메인 메뉴 화면으로 설정
-        primaryStage.setTitle("요괴를 피해 마을을 지키자!");
+        primaryStage.setTitle("마블런");
         primaryStage.show();
     }
     
