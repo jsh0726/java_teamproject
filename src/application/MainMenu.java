@@ -16,7 +16,7 @@ public class MainMenu {
         Pane root = new Pane(); // 절대 위치 설정을 위한 Pane 사용
 
         // 배경 이미지 설정
-        Image backgroundImage = new Image(getClass().getResource("/application/main.png").toExternalForm());
+        Image backgroundImage = new Image(getClass().getResource("/application/img/main.png").toExternalForm());
         BackgroundImage bgImage = new BackgroundImage(
             backgroundImage,
             BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT,
@@ -26,7 +26,7 @@ public class MainMenu {
         root.setBackground(new Background(bgImage));
 
         // "게임 시작" 이미지 버튼 생성
-        Image startImage = new Image(getClass().getResource("/application/btn_gamestart.png").toExternalForm());
+        Image startImage = new Image(getClass().getResource("/application/img/btn_start.png").toExternalForm());
         ImageView startButton = new ImageView(startImage);
         startButton.setFitWidth(150); // 기본 버튼 크기 설정
         startButton.setFitHeight(60);
@@ -34,7 +34,7 @@ public class MainMenu {
         startButton.setLayoutY(280); // Y 좌표 설정
 
         // "게임 방법" 이미지 버튼 생성
-        Image instructionsImage = new Image(getClass().getResource("/application/btn_gamerule.png").toExternalForm());
+        Image instructionsImage = new Image(getClass().getResource("/application/img/btn_rule.png").toExternalForm());
         ImageView instructionsButton = new ImageView(instructionsImage);
         instructionsButton.setFitWidth(150); // 기본 버튼 크기 설정
         instructionsButton.setFitHeight(60);

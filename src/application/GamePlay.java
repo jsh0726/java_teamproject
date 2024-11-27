@@ -1,7 +1,6 @@
 package application;
 
 import javafx.animation.AnimationTimer;
-import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
@@ -17,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class GamePlay extends Application {
+public class GamePlay {
     private double characterY = 300;
     private double characterVelocityY = 0;
     private boolean isJumping = false;
@@ -65,9 +64,9 @@ public class GamePlay extends Application {
         // 아이템 이미지 로드
         Image coinImage, arrowImage, orbImage;
         try {
-            coinImage = new Image(getClass().getResource("/application/yakgwa.png").toExternalForm());
-            arrowImage = new Image(getClass().getResource("/application/arrow.png").toExternalForm());
-            orbImage = new Image(getClass().getResource("/application/ball.png").toExternalForm());
+            coinImage = new Image(getClass().getResource("/application/img/yakgwa.png").toExternalForm());
+            arrowImage = new Image(getClass().getResource("/application/img/arrow.png").toExternalForm());
+            orbImage = new Image(getClass().getResource("/application/img/ball.png").toExternalForm());
         } catch (Exception e) {
             System.out.println("이미지 파일을 찾을 수 없습니다.");
             return null;
@@ -293,9 +292,5 @@ public class GamePlay extends Application {
                 iterator.remove();
             }
         }
-    }
-
-    public static void main(String[] args) {
-        launch(args);
     }
 }
