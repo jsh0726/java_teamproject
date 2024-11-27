@@ -1,7 +1,6 @@
 package application;
 
 import javafx.animation.AnimationTimer;
-import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
@@ -17,11 +16,22 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class GamePlay extends Application {
+public class GamePlay {
+    private static final double RUNNING_WIDTH = 100;
+    private static final double RUNNING_HEIGHT = 100;
+    private static final double JUMPING_WIDTH = 120;
+    private static final double JUMPING_HEIGHT = 120;
+    private static final double GRAVITY = 0.7;
+    private static final double JUMP_STRENGTH = -15;
+    private static final double SCROLL_SPEED = 5;
+    private static final int ITEM_SPACING = 50;
+    private static final int MAX_SCORE = 5000;
+
     private double characterY = 300;
     private double characterVelocityY = 0;
     private boolean isJumping = false;
-    private Rectangle character;
+    private ImageView character;
+    private ImageView enemy;
     private Rectangle[] obstacles;
     private List<ImageView> items;
     private Label gameOverLabel, scoreLabel, livesLabel, gameClearLabel, battleLabel;
@@ -30,133 +40,64 @@ public class GamePlay extends Application {
     private boolean inBattle = false;
     private int score = 0;
     private int lives = 3;
-    private static final double GRAVITY = 0.5;
-    private static final double JUMP_STRENGTH = -12;
-    private static final double SCROLL_SPEED = 3;
-    private static final int ITEM_SPACING = 150;
-    private static final int MAX_SCORE = 5000;
-    private Rectangle enemy;
     private int enemyHealth = 30;
-    private double initialEnemyWidth = 50;
     private List<Circle> enemyProjectiles = new ArrayList<>();
     private long lastProjectileTime = 0;
+    private Label enemyHealthLabel;
 
     public Scene getScene(Stage primaryStage) {
         Pane root = new Pane();
+        Scene scene = new Scene(root, 896, 512);
 
-        // 캐릭터 생성 및 추가
-        character = new Rectangle(50, 300, 30, 30);
-        character.setFill(Color.RED);
+        // 배경 이미지
+        ImageView background = new ImageView(new Image(getClass().getResourceAsStream("/application/img/daenamu.png")));
+        background.setFitWidth(896);
+        background.setFitHeight(512);
+        root.getChildren().add(background);
+
+        // 캐릭터 이미지
+        character = new ImageView(new Image(getClass().getResourceAsStream("/application/img/runningBy256.gif")));
+        character.setFitWidth(RUNNING_WIDTH);
+        character.setFitHeight(RUNNING_HEIGHT);
+        character.setX(50);
+        character.setY(characterY);
         root.getChildren().add(character);
 
-        // 땅 생성 및 추가
-        Rectangle ground = new Rectangle(0, 350, 800, 150);
-        ground.setFill(Color.GREEN);
-        root.getChildren().add(ground);
-
-        // 장애물 생성 및 추가
+        // 장애물
         obstacles = new Rectangle[3];
         for (int i = 0; i < obstacles.length; i++) {
-            obstacles[i] = new Rectangle(800 + i * 300, 320, 30, 30);
+            obstacles[i] = new Rectangle(800 + i * 300, 370, 30, 30);
             obstacles[i].setFill(Color.BLACK);
             root.getChildren().add(obstacles[i]);
         }
 
-        // 아이템 이미지 로드
-        Image coinImage, arrowImage, orbImage;
-        try {
-            coinImage = new Image(getClass().getResource("/application/yakgwa.png").toExternalForm());
-            arrowImage = new Image(getClass().getResource("/application/arrow.png").toExternalForm());
-            orbImage = new Image(getClass().getResource("/application/ball.png").toExternalForm());
-        } catch (Exception e) {
-            System.out.println("이미지 파일을 찾을 수 없습니다.");
-            return null;
-        }
-
-        // 아이템 리스트 생성 및 초기화
+        // 아이템
         items = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            ImageView coin = new ImageView(coinImage);
-            coin.setFitWidth(30);
-            coin.setFitHeight(30);
-            items.add(coin);
-
-            ImageView arrow = new ImageView(arrowImage);
-            arrow.setFitWidth(30);
-            arrow.setFitHeight(30);
-            items.add(arrow);
-
-            ImageView orb = new ImageView(orbImage);
-            orb.setFitWidth(30);
-            orb.setFitHeight(30);
-            items.add(orb);
+            ImageView item = new ImageView(new Image(getClass().getResourceAsStream("/application/img/yakgwa.png")));
+            item.setFitWidth(30);
+            item.setFitHeight(30);
+            item.setX(800 + i * ITEM_SPACING);
+            item.setY(350);
+            items.add(item);
+            root.getChildren().add(item);
         }
 
-        // 아이템을 일정 간격으로 배치
-        for (int i = 0; i < items.size(); i++) {
-            items.get(i).setX(800 + i * ITEM_SPACING);
-            items.get(i).setY(300);
-            root.getChildren().add(items.get(i));
-        }
-
-        // 점수와 생명 표시 라벨 생성 및 추가
+        // 라벨
         scoreLabel = new Label("Score: 0");
-        scoreLabel.setLayoutX(600);
-        scoreLabel.setLayoutY(20);
-        scoreLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: black;");
-        root.getChildren().add(scoreLabel);
-
         livesLabel = new Label("Lives: 3");
-        livesLabel.setLayoutX(700);
-        livesLabel.setLayoutY(20);
-        livesLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: black;");
-        root.getChildren().add(livesLabel);
-
-        // 게임 오버 메시지 생성 및 추가
         gameOverLabel = new Label("Game Over");
-        gameOverLabel.setTextFill(Color.RED);
-        gameOverLabel.setStyle("-fx-font-size: 48px;");
-        gameOverLabel.setLayoutX(250);
-        gameOverLabel.setLayoutY(200);
-        gameOverLabel.setVisible(false);
-        root.getChildren().add(gameOverLabel);
-
-        // 게임 클리어 메시지 생성 및 추가
         gameClearLabel = new Label("Game Clear!");
-        gameClearLabel.setTextFill(Color.BLUE);
-        gameClearLabel.setStyle("-fx-font-size: 48px;");
-        gameClearLabel.setLayoutX(250);
-        gameClearLabel.setLayoutY(200);
-        gameClearLabel.setVisible(false);
-        root.getChildren().add(gameClearLabel);
-
-        // 전투 시작 알림 메시지 생성 및 추가
         battleLabel = new Label("Fight the Enemy!");
-        battleLabel.setTextFill(Color.PURPLE);
-        battleLabel.setStyle("-fx-font-size: 32px;");
-        battleLabel.setLayoutX(300);
-        battleLabel.setLayoutY(50);
-        battleLabel.setVisible(false);
-        root.getChildren().add(battleLabel);
+        enemyHealthLabel = new Label(String.valueOf(enemyHealth));
 
-        // 적 생성
-        enemy = new Rectangle(750, 300, initialEnemyWidth, 50);
-        enemy.setFill(Color.DARKRED);
-        enemy.setVisible(false);
-        root.getChildren().add(enemy);
+        // 라벨 설정 및 추가
+        setupLabels(root);
 
         // 키 입력 처리
-        Scene scene = new Scene(root, 800, 500);
-        scene.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.SPACE && !isJumping && !gameOver && !gameClear) {
-                characterVelocityY = JUMP_STRENGTH;
-                isJumping = true;
-            } else if (event.getCode() == KeyCode.A && inBattle && !gameOver) {
-                attackEnemy();
-            }
-        });
+        setupKeyHandlers(scene);
 
-        // 게임 루프 - 매 프레임마다 게임 상태 업데이트
+        // 게임 루프
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
@@ -174,85 +115,114 @@ public class GamePlay extends Application {
         return scene;
     }
 
+    private void setupLabels(Pane root) {
+        // 점수 및 생명 라벨
+        scoreLabel.setLayoutX(600);
+        scoreLabel.setLayoutY(20);
+        scoreLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: black;");
+        root.getChildren().add(scoreLabel);
+
+        livesLabel.setLayoutX(700);
+        livesLabel.setLayoutY(20);
+        livesLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: black;");
+        root.getChildren().add(livesLabel);
+
+        // 기타 라벨
+        setupMessageLabels(root);
+    }
+
+    private void setupMessageLabels(Pane root) {
+        // 게임 오버 라벨
+        gameOverLabel.setTextFill(Color.RED);
+        gameOverLabel.setStyle("-fx-font-size: 48px;");
+        gameOverLabel.setLayoutX(250);
+        gameOverLabel.setLayoutY(200);
+        gameOverLabel.setVisible(false);
+        root.getChildren().add(gameOverLabel);
+
+        // 게임 클리어 라벨
+        gameClearLabel.setTextFill(Color.BLUE);
+        gameClearLabel.setStyle("-fx-font-size: 48px;");
+        gameClearLabel.setLayoutX(250);
+        gameClearLabel.setLayoutY(200);
+        gameClearLabel.setVisible(false);
+        root.getChildren().add(gameClearLabel);
+
+        // 전투 라벨
+        battleLabel.setTextFill(Color.PURPLE);
+        battleLabel.setStyle("-fx-font-size: 32px;");
+        battleLabel.setLayoutX(300);
+        battleLabel.setLayoutY(50);
+        battleLabel.setVisible(false);
+        root.getChildren().add(battleLabel);
+
+        // 적 체력 라벨
+        enemyHealthLabel.setLayoutX(750);
+        enemyHealthLabel.setLayoutY(280);
+        enemyHealthLabel.setStyle("-fx-font-size: 24px; -fx-text-fill: red; -fx-font-weight: bold;");
+        enemyHealthLabel.setVisible(false);
+        root.getChildren().add(enemyHealthLabel);
+    }
+
+    private void setupKeyHandlers(Scene scene) {
+        scene.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.SPACE && !isJumping && !gameOver && !gameClear) {
+                characterVelocityY = JUMP_STRENGTH;
+                isJumping = true;
+                character.setImage(new Image(getClass().getResourceAsStream("/application/img/jumpBy256.gif")));
+                character.setFitWidth(JUMPING_WIDTH);
+                character.setFitHeight(JUMPING_HEIGHT);
+            }
+        });
+    }
+
     private void update() {
+        // 캐릭터 위치 업데이트
         characterY += characterVelocityY;
         characterVelocityY += GRAVITY;
-
         if (characterY >= 300) {
             characterY = 300;
             characterVelocityY = 0;
             isJumping = false;
+            character.setImage(new Image(getClass().getResourceAsStream("/application/img/runningBy256.gif")));
+            character.setFitWidth(RUNNING_WIDTH);
+            character.setFitHeight(RUNNING_HEIGHT);
         }
-
         character.setY(characterY);
 
-        if (!inBattle) {
-            for (Rectangle obstacle : obstacles) {
-                obstacle.setX(obstacle.getX() - SCROLL_SPEED);
-                if (obstacle.getX() < -30) {
-                    obstacle.setX(800 + Math.random() * 300);
-                }
-
-                if (character.getBoundsInParent().intersects(obstacle.getBoundsInParent())) {
-                    reduceLife();
-                    obstacle.setX(800 + Math.random() * 300);
-                }
-            }
-
-            for (int i = 0; i < items.size(); i++) {
-                ImageView item = items.get(i);
-                item.setX(item.getX() - SCROLL_SPEED);
-
-                if (item.getX() < -30) {
-                    item.setX(800 + i * ITEM_SPACING);
-                }
-
-                if (character.getBoundsInParent().intersects(item.getBoundsInParent())) {
-                    score += 100;
-                    scoreLabel.setText("Score: " + score);
-                    item.setX(800 + i * ITEM_SPACING);
-
-                    if (score >= MAX_SCORE) {
-                        startBattle();
-                    }
-                }
-            }
-        } else {
-            if (enemyHealth <= 0) {
-                winBattle();
-            }
-            updateProjectiles();
-        }
+        // 장애물 및 아이템 충돌 처리
+        handleObstacles();
+        handleItems();
     }
 
-    private void startBattle() {
-        inBattle = true;
-        battleLabel.setVisible(true);
-        enemy.setVisible(true);
-
+    private void handleObstacles() {
         for (Rectangle obstacle : obstacles) {
-            obstacle.setVisible(false);
+            obstacle.setX(obstacle.getX() - SCROLL_SPEED);
+            if (obstacle.getX() < -30) {
+                obstacle.setX(800 + Math.random() * 300);
+            }
+            if (character.getBoundsInParent().intersects(obstacle.getBoundsInParent())) {
+                reduceLife();
+                obstacle.setX(800 + Math.random() * 300);
+            }
         }
+    }
+
+    private void handleItems() {
         for (ImageView item : items) {
-            item.setVisible(false);
+            item.setX(item.getX() - SCROLL_SPEED);
+            if (item.getX() < -30) {
+                item.setX(800 + Math.random() * ITEM_SPACING);
+            }
+            if (character.getBoundsInParent().intersects(item.getBoundsInParent())) {
+                score += 100;
+                scoreLabel.setText("Score: " + score);
+                item.setX(800 + Math.random() * ITEM_SPACING);
+                if (score >= MAX_SCORE) {
+                    startBattle();
+                }
+            }
         }
-    }
-
-    private void attackEnemy() {
-        enemyHealth--;
-        if (enemyHealth > 0) {
-            enemy.setWidth(initialEnemyWidth * enemyHealth / 30.0);
-        } else {
-            winBattle();
-        }
-    }
-
-    private void winBattle() {
-        inBattle = false;
-        enemy.setVisible(false);
-        battleLabel.setVisible(false);
-        gameClearLabel.setVisible(true);
-        gameClear = true;
     }
 
     private void reduceLife() {
@@ -268,34 +238,17 @@ public class GamePlay extends Application {
         gameOverLabel.setVisible(true);
     }
 
+    private void startBattle() {
+        inBattle = true;
+        battleLabel.setVisible(true);
+        enemy.setVisible(true);
+        enemyHealthLabel.setVisible(true);
+    }
+
     private void spawnEnemyProjectile(Pane root) {
-        Circle projectile = new Circle(enemy.getX() - 10, enemy.getY() + enemy.getHeight() / 2, 5);
+        Circle projectile = new Circle(enemy.getX() - 10, enemy.getY() + enemy.getFitHeight() / 2, 5);
         projectile.setFill(Color.DARKRED);
         enemyProjectiles.add(projectile);
         root.getChildren().add(projectile);
-    }
-
-    private void updateProjectiles() {
-        Iterator<Circle> iterator = enemyProjectiles.iterator();
-        while (iterator.hasNext()) {
-            Circle projectile = iterator.next();
-            projectile.setCenterX(projectile.getCenterX() - 5);
-
-            if (character.getBoundsInParent().intersects(projectile.getBoundsInParent())) {
-                reduceLife();
-                projectile.setVisible(false);
-                iterator.remove();
-                continue;
-            }
-
-            if (projectile.getCenterX() < -10) {
-                projectile.setVisible(false);
-                iterator.remove();
-            }
-        }
-    }
-
-    public static void main(String[] args) {
-        launch(args);
     }
 }
