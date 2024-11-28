@@ -10,13 +10,20 @@ import javafx.geometry.Insets;
 
 public class GameOver {
     public Scene createGameOverScene(Stage primaryStage, int score) { // 메서드 이름 변경
-        // 배경 설정: gamelose.png를 배경으로 사용
         StackPane layout = new StackPane();
-        ImageView background = new ImageView(new Image(getClass().getResource("/application/img/gamelose.png").toExternalForm()));
-        background.setFitWidth(800);
-        background.setFitHeight(500);
+        ImageView background;
+        try {
+            // GIF 이미지 로드
+            Image backgroundImage = new Image(getClass().getResource("/application/img/gamelose.gif").toExternalForm());
+            background = new ImageView(backgroundImage);
+            background.setFitWidth(800);
+            background.setFitHeight(500);
+        } catch (Exception e) {
+            System.err.println("Error: Could not load gamelose.gif. Check the file path.");
+            background = new ImageView();
+        }
 
-        // btn_back 버튼 생성
+        // 다시시작 버튼 생성
         ImageView backButtonImage = new ImageView(new Image(getClass().getResource("/application/img/btn_back.png").toExternalForm()));
         backButtonImage.setFitWidth(150); // 기본 크기 설정
         backButtonImage.setFitHeight(60);
@@ -28,7 +35,7 @@ public class GameOver {
             primaryStage.setScene(mainMenu.getScene(primaryStage)); // 메인 메뉴 화면으로 전환
         });
 
-        // btn_end 버튼 생성
+        // 게임종료 버튼 생성
         ImageView endButtonImage = new ImageView(new Image(getClass().getResource("/application/img/btn_end.png").toExternalForm()));
         endButtonImage.setFitWidth(150); // 기본 크기 설정
         endButtonImage.setFitHeight(60);
