@@ -28,7 +28,7 @@ public class GameInstructions {
         // "메인 메뉴로 돌아가기" 이미지 버튼 생성
         Image backButtonImage = new Image(getClass().getResource("/application/img/btn_back.png").toExternalForm());
         ImageView backButton = new ImageView(backButtonImage);
-        backButton.setFitWidth(150); // 기본 버튼 크기 설정
+        backButton.setFitWidth(160); // 기본 버튼 크기 설정
         backButton.setFitHeight(60);
         backButton.setLayoutX(180); // X 좌표 설정
         backButton.setLayoutY(380); // Y 좌표 설정
@@ -36,7 +36,7 @@ public class GameInstructions {
         // "게임 시작" 이미지 버튼 생성
         Image startImage = new Image(getClass().getResource("/application/img/btn_start.png").toExternalForm());
         ImageView startButton = new ImageView(startImage);
-        startButton.setFitWidth(150); // 기본 버튼 크기 설정
+        startButton.setFitWidth(160); // 기본 버튼 크기 설정
         startButton.setFitHeight(60);
         startButton.setLayoutX(430); // X 좌표 설정
         startButton.setLayoutY(380); // Y 좌표 설정
@@ -69,8 +69,9 @@ public class GameInstructions {
 
         // "게임 시작" 클릭 이벤트 설정
         startButton.setOnMouseClicked(e -> {
+            DialogueScene dialogueScene = new DialogueScene();
             GamePlay gamePlay = new GamePlay();
-            primaryStage.setScene(gamePlay.getScene(primaryStage)); // 게임 화면으로 전환
+            primaryStage.setScene(dialogueScene.getScene(primaryStage, gamePlay)); // 대화 화면으로 전환
         });
 
         // 버튼 추가
