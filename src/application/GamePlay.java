@@ -47,10 +47,10 @@ public class GamePlay {
 
     public Scene getScene(Stage primaryStage) {
         Pane root = new Pane();
-        Scene scene = new Scene(root, 896, 512);
+        Scene scene = new Scene(root, 800, 500);
 
         // 배경 이미지
-        ImageView background = new ImageView(new Image(getClass().getResourceAsStream("/application/img/daenamu.png")));
+        ImageView background = new ImageView(new Image(getClass().getResourceAsStream("/application/img/stage1.png")));
         background.setFitWidth(896);
         background.setFitHeight(512);
         root.getChildren().add(background);
@@ -189,24 +189,44 @@ public class GamePlay {
         // 캐릭터 위치 업데이트
         characterY += characterVelocityY;
         characterVelocityY += GRAVITY;
-        
+
         if (characterY >= 300) {
             characterY = 300;
             characterVelocityY = 0;
-            isJumping = false;
-            character.setImage(new Image(getClass().getResourceAsStream("/application/img/runningBy256.gif")));
-            character.setFitWidth(RUNNING_WIDTH);
-            character.setFitHeight(RUNNING_HEIGHT);
+
+            if (!gameOver) {
+                // 캐릭터가 점프 후 달리기 상태로 복귀
+                isJumping = false;
+                character.setImage(new Image(getClass().getResourceAsStream("/application/img/runningBy256.gif")));
+                character.setFitWidth(RUNNING_WIDTH);
+                character.setFitHeight(RUNNING_HEIGHT);
+            }
         }
         character.setY(characterY);
 
-        if (!inBattle) {
+        if (!inBattle && !gameOver) {
             handleObstacles();
             handleItems();
-        } else {
+        } else if (inBattle) {
             updateProjectiles();
         }
     }
+
+    private void gameOver() {
+        gameOver = true;
+
+        // 캐릭터를 게임 오버 상태로 변경
+        character.setImage(new Image(getClass().getResourceAsStream("/application/img/loseBy256.gif")));
+        character.setFitWidth(RUNNING_WIDTH); // lose GIF 크기 조정
+        character.setFitHeight(RUNNING_HEIGHT);
+
+        // 게임 오버 화면으로 전환
+        GameOver gameOverScene = new GameOver();
+        Stage primaryStage = (Stage) character.getScene().getWindow(); // 현재 Stage 가져오기
+        primaryStage.setScene(gameOverScene.createGameOverScene(primaryStage, score)); // 변경된 메서드 사용
+    }
+
+
 
     private void handleObstacles() {
         for (Rectangle obstacle : obstacles) {

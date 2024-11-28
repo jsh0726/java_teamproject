@@ -28,44 +28,46 @@ public class MainMenu {
         // "게임 시작" 이미지 버튼 생성
         Image startImage = new Image(getClass().getResource("/application/img/btn_start.png").toExternalForm());
         ImageView startButton = new ImageView(startImage);
-        startButton.setFitWidth(150); // 기본 버튼 크기 설정
+        startButton.setFitWidth(160); // 기본 버튼 크기 설정
         startButton.setFitHeight(60);
-        startButton.setLayoutX(430); // X 좌표 설정
+        startButton.setLayoutX(420); // X 좌표 설정
         startButton.setLayoutY(280); // Y 좌표 설정
 
         // "게임 방법" 이미지 버튼 생성
         Image instructionsImage = new Image(getClass().getResource("/application/img/btn_rule.png").toExternalForm());
         ImageView instructionsButton = new ImageView(instructionsImage);
-        instructionsButton.setFitWidth(150); // 기본 버튼 크기 설정
+        instructionsButton.setFitWidth(160); // 기본 버튼 크기 설정
         instructionsButton.setFitHeight(60);
-        instructionsButton.setLayoutX(180); // X 좌표 설정
+        instructionsButton.setLayoutX(170); // X 좌표 설정
         instructionsButton.setLayoutY(280); // Y 좌표 설정
 
         // "게임 시작" 버튼 확대/축소 애니메이션
         startButton.setOnMouseEntered(e -> {
-            startButton.setFitWidth(170); // 확대 크기
-            startButton.setFitHeight(70);
+            startButton.setFitWidth(180); // 확대 크기
+            startButton.setFitHeight(75);
         });
         startButton.setOnMouseExited(e -> {
-            startButton.setFitWidth(150); // 원래 크기
+            startButton.setFitWidth(160); // 원래 크기
             startButton.setFitHeight(60);
         });
 
         // "게임 방법" 버튼 확대/축소 애니메이션
         instructionsButton.setOnMouseEntered(e -> {
-            instructionsButton.setFitWidth(170); // 확대 크기
-            instructionsButton.setFitHeight(70);
+            instructionsButton.setFitWidth(180); // 확대 크기
+            instructionsButton.setFitHeight(75);
         });
         instructionsButton.setOnMouseExited(e -> {
-            instructionsButton.setFitWidth(150); // 원래 크기
+            instructionsButton.setFitWidth(160); // 원래 크기
             instructionsButton.setFitHeight(60);
         });
 
         // "게임 시작" 클릭 이벤트 설정
         startButton.setOnMouseClicked(e -> {
+            DialogueScene dialogueScene = new DialogueScene();
             GamePlay gamePlay = new GamePlay();
-            primaryStage.setScene(gamePlay.getScene(primaryStage)); // 게임 화면으로 전환
+            primaryStage.setScene(dialogueScene.getScene(primaryStage, gamePlay)); // 대화 화면으로 전환
         });
+
 
         // "게임 방법" 클릭 이벤트 설정
         instructionsButton.setOnMouseClicked(e -> {
