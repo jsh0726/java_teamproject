@@ -21,15 +21,15 @@ public class GamePlay {
     private static final double RUNNING_HEIGHT = 100;
     private static final double JUMPING_WIDTH = 120;
     private static final double JUMPING_HEIGHT = 120;
+    
+    private double characterY = 300;
+    private double characterVelocityY = 0;
+    private boolean isJumping = false;
     private static final double GRAVITY = 0.7;
     private static final double JUMP_STRENGTH = -15;
     private static final double SCROLL_SPEED = 5;
     private static final int ITEM_SPACING = 50;
     private static final int MAX_SCORE = 5000;
-
-    private double characterY = 300;
-    private double characterVelocityY = 0;
-    private boolean isJumping = false;
     private ImageView character;
     private ImageView enemy;
     private Rectangle[] obstacles;
@@ -63,7 +63,7 @@ public class GamePlay {
         character.setY(characterY);
         root.getChildren().add(character);
 
-        // 장애물
+        // 장애물 생성
         obstacles = new Rectangle[3];
         for (int i = 0; i < obstacles.length; i++) {
             obstacles[i] = new Rectangle(800 + i * 300, 370, 30, 30);
@@ -83,7 +83,7 @@ public class GamePlay {
             root.getChildren().add(item);
         }
 
-        // 라벨
+        // 라벨 생성
         scoreLabel = new Label("Score: 0");
         livesLabel = new Label("Lives: 3");
         gameOverLabel = new Label("Game Over");
@@ -93,6 +93,15 @@ public class GamePlay {
 
         // 라벨 설정 및 추가
         setupLabels(root);
+        
+        // 적 초기화
+        enemy = new ImageView(new Image(getClass().getResourceAsStream("/application/img/boss.gif")));
+        enemy.setFitWidth(150);
+        enemy.setFitHeight(150);
+        enemy.setX(650);
+        enemy.setY(250);
+        enemy.setVisible(false);
+        root.getChildren().add(enemy);
 
         // 키 입력 처리
         setupKeyHandlers(scene);
@@ -180,6 +189,7 @@ public class GamePlay {
         // 캐릭터 위치 업데이트
         characterY += characterVelocityY;
         characterVelocityY += GRAVITY;
+        
         if (characterY >= 300) {
             characterY = 300;
             characterVelocityY = 0;
@@ -190,9 +200,12 @@ public class GamePlay {
         }
         character.setY(characterY);
 
-        // 장애물 및 아이템 충돌 처리
-        handleObstacles();
-        handleItems();
+        if (!inBattle) {
+            handleObstacles();
+            handleItems();
+        } else {
+            updateProjectiles();
+        }
     }
 
     private void handleObstacles() {
@@ -201,12 +214,23 @@ public class GamePlay {
             if (obstacle.getX() < -30) {
                 obstacle.setX(800 + Math.random() * 300);
             }
-            if (character.getBoundsInParent().intersects(obstacle.getBoundsInParent())) {
+            if (checkCollision(obstacle)) {
                 reduceLife();
                 obstacle.setX(800 + Math.random() * 300);
             }
         }
     }
+    
+    private boolean checkCollision(Rectangle obstacle) {
+        Rectangle characterHitBox = new Rectangle(
+            character.getX() + 10, // 캐릭터의 히트 박스를 약간 안쪽으로 조정
+            character.getY() + 10,
+            character.getFitWidth() - 20,
+            character.getFitHeight() - 20
+        );
+        return characterHitBox.getBoundsInParent().intersects(obstacle.getBoundsInParent());
+    }
+
 
     private void handleItems() {
         for (ImageView item : items) {
@@ -225,19 +249,6 @@ public class GamePlay {
         }
     }
 
-    private void reduceLife() {
-        lives--;
-        livesLabel.setText("Lives: " + lives);
-        if (lives <= 0) {
-            gameOver();
-        }
-    }
-
-    private void gameOver() {
-        gameOver = true;
-        gameOverLabel.setVisible(true);
-    }
-
     private void startBattle() {
         inBattle = true;
         battleLabel.setVisible(true);
@@ -250,5 +261,37 @@ public class GamePlay {
         projectile.setFill(Color.DARKRED);
         enemyProjectiles.add(projectile);
         root.getChildren().add(projectile);
+    }
+    
+    private void updateProjectiles() {
+        Iterator<Circle> iterator = enemyProjectiles.iterator();
+        while (iterator.hasNext()) {
+            Circle projectile = iterator.next();
+            projectile.setCenterX(projectile.getCenterX() - 5);
+
+            if (character.getBoundsInParent().intersects(projectile.getBoundsInParent())) {
+                reduceLife();
+                projectile.setVisible(false);
+                iterator.remove();
+            }
+
+            if (projectile.getCenterX() < -10) {
+                projectile.setVisible(false);
+                iterator.remove();
+            }
+        }
+    }
+    
+    private void reduceLife() {
+        lives--;
+        livesLabel.setText("Lives: " + lives);
+        if (lives <= 0) {
+            gameOver();
+        }
+    }
+
+    private void gameOver() {
+        gameOver = true;
+        gameOverLabel.setVisible(true);
     }
 }

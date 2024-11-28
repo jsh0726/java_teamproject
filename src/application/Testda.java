@@ -19,7 +19,7 @@
 //import java.util.Iterator;
 //import java.util.List;
 //
-//public class Testdlqslek extends Application {
+//public class Testda extends Application {
 //    private static final double RUNNING_WIDTH = 100; // 러닝 이미지 너비
 //    private static final double RUNNING_HEIGHT = 100; // 러닝 이미지 높이
 //    private static final double JUMPING_WIDTH = 120; // 점프 이미지 너비
@@ -274,13 +274,13 @@
 //            for (Rectangle obstacle : obstacles) {
 //                obstacle.setX(obstacle.getX() - SCROLL_SPEED);
 //                if (obstacle.getX() < -30) {
-//                    obstacle.setX(800 + Math.random() * 300);
+//                    obstacle.setX(800 + Math.random() * 500);
 //                }
 //
 //                // 캐릭터와 장애물이 충돌하면 생명 감소
 //                if (character.getBoundsInParent().intersects(obstacle.getBoundsInParent())) {
 //                    reduceLife();
-//                    obstacle.setX(800 + Math.random() * 300);
+//                    obstacle.setX(800 + Math.random() * 500);
 //                }
 //            }
 //
