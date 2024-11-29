@@ -11,10 +11,12 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
+import javafx.application.Platform;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 
 public class GamePlay {
     private static final double RUNNING_WIDTH = 100;
@@ -23,8 +25,6 @@ public class GamePlay {
     private static final double JUMPING_HEIGHT = 120;
     
     private boolean isSliding = false; // 슬라이드 상태를 나타내는 변수
-    private static final double SLIDE_WIDTH = 50; // 슬라이드 상태 캐릭터 너비
-    private static final double SLIDE_HEIGHT = 50; // 슬라이드 상태 캐릭터 높이
     
     private double SCROLL_SPEED = 5; // 초기 스크롤 속도
     private static final int ITEM_SPACING = 50;
@@ -35,6 +35,7 @@ public class GamePlay {
     private long stageStartTime; // 각 스테이지 시작 시간 기록
     private List<Image> platformImages;
     private ImageView platform;
+    
     private List<ImageView> platforms; // 여러 발판을 관리하는 리스트
     private static final double PLATFORM_HEIGHT = 20; // 발판 높이
     private static final double PLATFORM_SCROLL_SPEED = 5; // 발판 스크롤 속도
@@ -49,7 +50,6 @@ public class GamePlay {
     private ImageView character;
     private ImageView enemy;
     private Rectangle[] obstacles;
-    private List<ImageView> items;
     private Label  scoreLabel, battleLabel;
     private boolean gameOver = false;
     private boolean gameClear = false;
@@ -59,13 +59,18 @@ public class GamePlay {
     private int enemyHealth = 30;
     
     private List<Circle> enemyProjectiles = new ArrayList<>();
+    private long startTime; // 게임 시작 시간
     private long lastProjectileTime = 0;
+    
+    private List<ImageView> items = new ArrayList<>(); // 아이템 리스트
+    private long lastItemSpawnTime = 0; // 마지막 아이템 생성 시간
+    private static final long ITEM_SPAWN_INTERVAL = 300_000_000L; // 1초(나노초 단위)
+    
     private List<Image> stageBackgrounds;
     private ImageView background;
     private LifeIndicator lifeIndicator;
-
-    private Label enemyHealthLabel;
-    private long startTime; // 게임 시작 시간
+    private Label enemyHealthLabel;private Pane root;
+    
     
     
     public Scene getScene(Stage primaryStage) {
@@ -110,18 +115,6 @@ public class GamePlay {
             root.getChildren().add(obstacles[i]);
         }
 
-        //아이템
-        items = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            ImageView item = new ImageView(new Image(getClass().getResourceAsStream("/application/img/yakgwa.png")));
-            item.setFitWidth(30);
-            item.setFitHeight(30);
-            item.setX(800 + i * ITEM_SPACING);
-            item.setY(350);
-            items.add(item);
-            root.getChildren().add(item);
-        }
-
         // 라벨 생성
         scoreLabel = new Label("0");
         lifeIndicator = new LifeIndicator(5, root, 640, 20);
@@ -150,6 +143,8 @@ public class GamePlay {
             @Override
             public void handle(long now) {
                 if (!gameOver && !gameClear) {
+                	spawnItem(root, now); // 아이템 생성
+                    updateItems(root); // 아이템 이동 및 삭제
                     update(now);  // 캐릭터 및 기타 요소 업데이트
                     if (inBattle && now - lastProjectileTime > 1_000_000_000) {
                         spawnEnemyProjectile(root);
@@ -161,6 +156,51 @@ public class GamePlay {
         timer.start();
 
         return scene;
+    }
+    
+ // 아이템 생성
+    private void spawnItem(Pane root, long now) {
+    	if (inBattle) {
+            return; // 보스맵에서는 아이템 생성 중단
+        }
+        if (now - lastItemSpawnTime >= ITEM_SPAWN_INTERVAL) { // 1초마다 아이템 생성
+            ImageView item = new ImageView(new Image(getClass().getResourceAsStream("/application/img/yakgwa.png")));
+            item.setFitWidth(30);
+            item.setFitHeight(30);
+            item.setX(800); // 시작 X 좌표
+            item.setY(350); // 시작 Y 좌표
+            items.add(item);
+            root.getChildren().add(item);
+
+            lastItemSpawnTime = now; // 마지막 생성 시간 갱신
+        }
+    }
+
+ // 아이템 이동, 충돌 및 삭제
+    private void updateItems(Pane root) {
+        Iterator<ImageView> iterator = items.iterator();
+        while (iterator.hasNext()) {
+            ImageView item = iterator.next();
+            item.setX(item.getX() - SCROLL_SPEED); // 아이템 왼쪽으로 이동
+
+            // 충돌 감지
+            if (character.getBoundsInParent().intersects(item.getBoundsInParent())) {
+                // 점수 증가
+                score += 100;
+                scoreLabel.setText("Score: " + score);
+
+                // 아이템 삭제
+                root.getChildren().remove(item);
+                iterator.remove();
+                continue; // 충돌한 아이템은 아래 코드 실행 생략
+            }
+
+            // 화면 밖으로 나가면 삭제
+            if (item.getX() < -30) {
+                root.getChildren().remove(item);
+                iterator.remove();
+            }
+        }
     }
     
     // 발판 초기화 메서드 추가
@@ -225,37 +265,46 @@ public class GamePlay {
     }
 
     private void setupKeyHandlers(Scene scene) {
-        scene.setOnKeyPressed(event -> {
-            // 점프 로직
-            if (event.getCode() == KeyCode.SPACE && !isJumping && !gameOver && !gameClear && !isSliding) {
-                characterVelocityY = JUMP_STRENGTH;
-                isJumping = true;
-                character.setImage(new Image(getClass().getResourceAsStream("/application/img/jumpBy256.gif")));
-                character.setFitWidth(JUMPING_WIDTH);
-                character.setFitHeight(JUMPING_HEIGHT);
-            }
-            // 슬라이드 로직
-            if (event.getCode() == KeyCode.S && !isJumping && !isSliding && !gameOver && !gameClear) {
-                isSliding = true;
-                character.setFitWidth(SLIDE_WIDTH);
-                character.setFitHeight(SLIDE_HEIGHT);
-                character.setY(350); // 슬라이드 시 Y 좌표를 350으로 고정
-            }
-            // 적 공격 로직
-            if (event.getCode() == KeyCode.A && inBattle && !gameOver && enemy.isVisible()) { 
-                attackEnemy(); // 적 공격 메서드 호출
-            }
-        });
+    	scene.setOnKeyPressed(event -> {
+    	    // 점프 로직
+    	    if (event.getCode() == KeyCode.SPACE && !isJumping && !gameOver && !gameClear && !isSliding) {
+    	        characterVelocityY = JUMP_STRENGTH;
+    	        isJumping = true;
+    	        character.setImage(new Image(getClass().getResourceAsStream("/application/img/jumpBy256.gif")));
+    	        character.setFitWidth(JUMPING_WIDTH);
+    	        character.setFitHeight(JUMPING_HEIGHT);
+    	    }
+    	    // 슬라이드 로직
+    	    if (event.getCode() == KeyCode.S && !isJumping && !isSliding && !gameOver && !gameClear) {
+    	        isSliding = true;
+    	        try {
+    	            character.setImage(new Image(getClass().getResourceAsStream("/application/img/slideBy256.png"))); // 슬라이드 이미지 적용
+    	        } catch (Exception e) {
+    	            System.out.println("슬라이드 이미지 로드 중 오류: " + e.getMessage());
+    	        }
+    	        character.setFitWidth(RUNNING_WIDTH); // 러닝 이미지 크기 유지
+    	        character.setFitHeight(RUNNING_HEIGHT); // 러닝 이미지 크기 유지
+    	        character.setY(350); // 슬라이드 시 Y 좌표를 350으로 고정
+    	    }
+    	    // 적 공격 로직
+    	    if (event.getCode() == KeyCode.A && inBattle && !gameOver && enemy.isVisible()) { 
+    	        attackEnemy(); // 적 공격 메서드 호출
+    	    }
+    	});
 
-        scene.setOnKeyReleased(event -> {
-            // 슬라이드에서 복구
-            if (event.getCode() == KeyCode.S && isSliding) {
-                isSliding = false;
-                character.setFitWidth(RUNNING_WIDTH);
-                character.setFitHeight(RUNNING_HEIGHT);
-                character.setY(300); // 원래 Y 좌표로 복구
-            }
-        });
+    	scene.setOnKeyReleased(event -> {
+    	    // 슬라이드에서 복구
+    	    if (event.getCode() == KeyCode.S && isSliding) {
+    	        isSliding = false;
+    	        try {
+    	            character.setImage(new Image(getClass().getResourceAsStream("/application/img/runningBy256.gif"))); // 원래 러닝 이미지 복구
+    	        } catch (Exception e) {
+    	            System.out.println("러닝 이미지 복구 중 오류: " + e.getMessage());
+    	        }
+    	        character.setY(350); // 원래 Y 좌표로 복구
+    	    }
+    	});
+
     }
     
     // 적을 공격하는 메서드
@@ -310,7 +359,6 @@ public class GamePlay {
         // 게임 상태에 따라 업데이트 처리
         if (!inBattle) {
             handleObstacles();
-            handleItems();
         } else {
             updateProjectiles();
         }
@@ -409,21 +457,6 @@ public class GamePlay {
         }
     }
     
-    private void handleItems() {
-        for (ImageView item : items) {
-            item.setX(item.getX() - SCROLL_SPEED);
-            if (item.getX() < -30) {
-                item.setX(800 + Math.random() * ITEM_SPACING);
-            }
-            if (character.getBoundsInParent().intersects(item.getBoundsInParent())) {
-                score += 100;
-                scoreLabel.setText(" " + score);
-                item.setX(800 + Math.random() * ITEM_SPACING);
-                
-                }
-            }
-        }
-    
     private boolean checkCollision(Rectangle obstacle) {
         Rectangle characterHitBox = new Rectangle(
             character.getX() + 10, // 캐릭터의 히트 박스를 약간 안쪽으로 조정
@@ -449,7 +482,7 @@ public class GamePlay {
         enemy.setVisible(true);
         enemyHealthLabel.setVisible(true);
         
-     // 장애물 및 아이템 제거
+        // 장애물 및 아이템 제거
         for (Rectangle obstacle : obstacles) {
             obstacle.setVisible(false); // 장애물 숨김
         }
