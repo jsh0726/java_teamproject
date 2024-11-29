@@ -38,8 +38,8 @@ public class DialogueScene {
 
         // 캐릭터 이미지
         ImageView characterImage = new ImageView(new Image(getClass().getResourceAsStream(characterImages[dialogueIndex])));
-        characterImage.setFitWidth(150);
-        characterImage.setFitHeight(200);
+        characterImage.setFitWidth(140);
+        characterImage.setFitHeight(140);
         updateCharacterPosition(characterImage); // 캐릭터 위치 설정
         root.getChildren().add(characterImage);
 
@@ -50,7 +50,7 @@ public class DialogueScene {
         dialogueLabel.setWrapText(true);
         dialogueLabel.setAlignment(Pos.CENTER);
         dialogueLabel.setStyle("-fx-background-color: #eec39a; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-padding: 15px;");
-        dialogueLabel.setPrefWidth(650); // 라벨 가로 크기 고정
+        dialogueLabel.setPrefWidth(660); // 라벨 가로 크기 고정
         dialogueLabel.setPrefHeight(130); // 라벨 세로 크기 고정
         updateLabelPosition(dialogueLabel); // 대사 라벨 초기 위치 설정
         root.getChildren().add(dialogueLabel);
@@ -78,11 +78,11 @@ public class DialogueScene {
         if (dialogueIndex % 2 == 0) {
             // 주인공: 오른쪽 아래
             characterImage.setLayoutX(0); // X 좌표
-            characterImage.setLayoutY(300); // Y 좌표
+            characterImage.setLayoutY(360); // Y 좌표
         } else {
             // 보스: 왼쪽 아래
-            characterImage.setLayoutX(650); // X 좌표
-            characterImage.setLayoutY(300); // Y 좌표
+            characterImage.setLayoutX(660); // X 좌표
+            characterImage.setLayoutY(360); // Y 좌표
         }
     }
 
@@ -90,7 +90,7 @@ public class DialogueScene {
         // 대화 인덱스에 따라 라벨 위치 변경
         if (dialogueIndex % 2 == 0) {
             // 주인공 대사: 라벨 왼쪽으로 배치
-            dialogueLabel.setLayoutX(150); // X 좌표
+            dialogueLabel.setLayoutX(140); // X 좌표
             dialogueLabel.setLayoutY(380); // Y 좌표
         } else {
             // 보스 대사: 라벨 오른쪽으로 배치
