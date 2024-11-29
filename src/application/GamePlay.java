@@ -26,7 +26,7 @@ public class GamePlay {
     
     private boolean isSliding = false; // 슬라이드 상태를 나타내는 변수
     
-    private double SCROLL_SPEED = 5; // 초기 스크롤 속도
+    private double SCROLL_SPEED = 3; // 초기 스크롤 속도
     private static final int ITEM_SPACING = 50;
     
     private static final int TOTAL_STAGES = 4; // 총 4개의 스테이지
@@ -38,7 +38,7 @@ public class GamePlay {
     
     private List<ImageView> platforms; // 여러 발판을 관리하는 리스트
     private static final double PLATFORM_HEIGHT = 20; // 발판 높이
-    private static final double PLATFORM_SCROLL_SPEED = 5; // 발판 스크롤 속도
+    private static final double PLATFORM_SCROLL_SPEED = 2; // 발판 스크롤 속도
 
     
     private double characterY = 300;
@@ -64,15 +64,16 @@ public class GamePlay {
     
     private List<ImageView> items = new ArrayList<>(); // 아이템 리스트
     private long lastItemSpawnTime = 0; // 마지막 아이템 생성 시간
-    private static final long ITEM_SPAWN_INTERVAL = 300_000_000L; // 1초(나노초 단위)
+    private static final long ITEM_SPAWN_INTERVAL = 300_000_000L; // 0.3초(나노초 단위)
     
     private List<Image> stageBackgrounds;
     private ImageView background;
     private LifeIndicator lifeIndicator;
     private Label enemyHealthLabel;private Pane root;
-    
-    
-    
+    // 체력바 관련 변수
+    private ImageView healthBar; // 체력바 이미지
+    private int currentHealthState = 6; // 체력 상태를 나타내는 변수 (총 6단계: 30 ~ 0)
+
     public Scene getScene(Stage primaryStage) {
         Pane root = new Pane();
         Scene scene = new Scene(root, 800, 500);
@@ -146,7 +147,8 @@ public class GamePlay {
                 	spawnItem(root, now); // 아이템 생성
                     updateItems(root); // 아이템 이동 및 삭제
                     update(now);  // 캐릭터 및 기타 요소 업데이트
-                    if (inBattle && now - lastProjectileTime > 1_000_000_000) {
+                    if (inBattle && now - lastProjectileTime > 2_000_000_000) {
+ 
                         spawnEnemyProjectile(root);
                         lastProjectileTime = now;
                     }
@@ -163,7 +165,7 @@ public class GamePlay {
     	if (inBattle) {
             return; // 보스맵에서는 아이템 생성 중단
         }
-        if (now - lastItemSpawnTime >= ITEM_SPAWN_INTERVAL) { // 1초마다 아이템 생성
+        if (now - lastItemSpawnTime >= ITEM_SPAWN_INTERVAL) { // 0.3초마다 아이템 생성
             ImageView item = new ImageView(new Image(getClass().getResourceAsStream("/application/img/yakgwa.png")));
             item.setFitWidth(30);
             item.setFitHeight(30);
@@ -187,7 +189,7 @@ public class GamePlay {
             if (character.getBoundsInParent().intersects(item.getBoundsInParent())) {
                 // 점수 증가
                 score += 100;
-                scoreLabel.setText("Score: " + score);
+                scoreLabel.setText(" " + score);
 
                 // 아이템 삭제
                 root.getChildren().remove(item);
@@ -205,19 +207,21 @@ public class GamePlay {
     
     // 발판 초기화 메서드 추가
     private void initializePlatform(Pane root) {
-        // 발판 이미지 리스트 초기화
-        platformImages = new ArrayList<>();
+    	// 발판 이미지 리스트 초기화 (높이를 지정하여 생성)
+    	platformImages = new ArrayList<>();
         platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding1.png"))); // 스테이지 1 발판
         platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding2.png"))); // 스테이지 2 발판
         platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding3.png"))); // 스테이지 3 발판
         platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding4.png"))); // 스테이지 4 발판
 
-        // 초기 발판 설정
-        platform = new ImageView(platformImages.get(0));
-        platform.setFitWidth(100); // 발판 너비 설정
-        platform.setFitHeight(20); // 발판 높이 설정
-        platform.setX(character.getX() + (RUNNING_WIDTH - 100) / 2); // 캐릭터 아래 가운데 위치
-        platform.setY(characterY + RUNNING_HEIGHT);
+        // 초기 발판 설정 (맵에서 고정된 위치로 설정)
+        platform = new ImageView(platformImages.get(0)); // 첫 번째 발판 이미지 사용
+        platform.setFitWidth(800); // 발판 너비 설정 (맵 크기에 맞춤)
+        platform.setFitHeight(120);
+        platform.setY(395); // 발판의 Y 좌표를 고정 (맵 바닥 근처에 고정)
+        platform.setX(0); // 발판의 X 좌표를 고정 (맵 왼쪽에 고정)
+
+        // 발판을 루트 노드에 추가
         root.getChildren().add(platform);
     }
 
@@ -262,6 +266,15 @@ public class GamePlay {
         enemyHealthLabel.setStyle("-fx-font-size: 24px; -fx-text-fill: red; -fx-font-weight: bold;");
         enemyHealthLabel.setVisible(false);
         root.getChildren().add(enemyHealthLabel);
+        
+        // 체력바 이미지 초기화
+        healthBar = new ImageView(new Image(getClass().getResourceAsStream("/application/img/health_30.png")));
+        healthBar.setFitWidth(150); // 체력바 크기 설정
+        healthBar.setFitHeight(80);
+        healthBar.setLayoutX(635); // 적 체력바 위치
+        healthBar.setLayoutY(195); // 적 체력바 위치
+        healthBar.setVisible(false); // 전투 시작 전에는 보이지 않음
+        root.getChildren().add(healthBar);
     }
 
     private void setupKeyHandlers(Scene scene) {
@@ -309,15 +322,33 @@ public class GamePlay {
     
     // 적을 공격하는 메서드
     private void attackEnemy() {
-        // 적 체력을 1 감소
+    	 // 적 체력을 1 감소
         enemyHealth--;
 
-        // 적 체력 라벨 업데이트
-        enemyHealthLabel.setText(String.valueOf(enemyHealth));
+     // 체력이 0 이상일 때만 체력 바 업데이트
+        if (enemyHealth > 0) {
+            updateHealthBar();
+        }
 
         // 적 체력이 0 이하일 경우 승리 처리
         if (enemyHealth <= 0) {
             winBattle();
+        }
+    }
+    
+    private void updateHealthBar() {
+        // 체력이 0 이상이고 5의 배수일 때만 체력 바 이미지를 업데이트
+        if (enemyHealth > 0 && enemyHealth % 5 == 0) {
+            int healthState = enemyHealth / 5; // 현재 체력 상태 계산
+            if (healthState != currentHealthState) {
+                currentHealthState = healthState;
+                String healthImagePath = "/application/img/health_" + (healthState * 5) + ".png";
+                try {
+                    healthBar.setImage(new Image(getClass().getResourceAsStream(healthImagePath)));
+                } catch (Exception e) {
+                    System.out.println("체력바 이미지 로드 실패: " + healthImagePath);
+                }
+            }
         }
     }
     
@@ -387,8 +418,7 @@ public class GamePlay {
             }
 
             character.setY(characterY); // 캐릭터의 위치를 업데이트
-            platform.setX(character.getX() + (RUNNING_WIDTH - platform.getFitWidth()) / 2); // 캐릭터 X 위치에 맞춤
-            platform.setY(characterY + RUNNING_HEIGHT); // 캐릭터 바로 아래 위치	
+           
         }
     }
 
@@ -480,7 +510,7 @@ public class GamePlay {
         inBattle = true;
         battleLabel.setVisible(true);
         enemy.setVisible(true);
-        enemyHealthLabel.setVisible(true);
+        healthBar.setVisible(true);
         
         // 장애물 및 아이템 제거
         for (Rectangle obstacle : obstacles) {

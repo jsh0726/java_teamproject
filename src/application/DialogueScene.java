@@ -6,6 +6,7 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
@@ -38,22 +39,36 @@ public class DialogueScene {
 
         // 캐릭터 이미지
         ImageView characterImage = new ImageView(new Image(getClass().getResourceAsStream(characterImages[dialogueIndex])));
-        characterImage.setFitWidth(140);
-        characterImage.setFitHeight(140);
+        characterImage.setFitWidth(196);
+        characterImage.setFitHeight(196);
         updateCharacterPosition(characterImage); // 캐릭터 위치 설정
         root.getChildren().add(characterImage);
 
-        // 대사 라벨 설정
+        // 대사창 StackPane 생성
+        StackPane dialoguePane = new StackPane();
+
+        // 대사창 배경 이미지
+        ImageView backgroundImageView = new ImageView(new Image(getClass().getResourceAsStream("/application/img/daesa.png")));
+        backgroundImageView.setFitWidth(601); // 대사창 가로 크기
+        backgroundImageView.setFitHeight(196); // 대사창 세로 크기
+
+        // 대사 텍스트 라벨
         Label dialogueLabel = new Label(dialogues[dialogueIndex]);
-        dialogueLabel.setFont(new Font("Arial", 20));
+        dialogueLabel.setFont(new Font("Arial", 18));
         dialogueLabel.setTextAlignment(TextAlignment.CENTER);
         dialogueLabel.setWrapText(true);
         dialogueLabel.setAlignment(Pos.CENTER);
-        dialogueLabel.setStyle("-fx-background-color: #eec39a; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-padding: 15px;");
-        dialogueLabel.setPrefWidth(660); // 라벨 가로 크기 고정
-        dialogueLabel.setPrefHeight(120); // 라벨 세로 크기 고정
-        updateLabelPosition(dialogueLabel); // 대사 라벨 초기 위치 설정
-        root.getChildren().add(dialogueLabel);
+        dialogueLabel.setPrefWidth(601); // 라벨 크기를 대사창 크기와 동일하게 설정
+        dialogueLabel.setPrefHeight(196);
+        dialogueLabel.setStyle("-fx-text-fill: black; -fx-font-weight: bold;"); // 텍스트 스타일
+
+        // StackPane에 배경 이미지와 텍스트 추가
+        dialoguePane.getChildren().addAll(backgroundImageView, dialogueLabel);
+
+        // StackPane 초기 위치 설정
+        updateDialoguePosition(dialoguePane);
+
+        root.getChildren().add(dialoguePane);
 
         // 대사 진행 로직
         Runnable advanceDialogue = () -> {
@@ -63,7 +78,7 @@ public class DialogueScene {
                 dialogueLabel.setText(dialogues[dialogueIndex]);
                 characterImage.setImage(new Image(getClass().getResourceAsStream(characterImages[dialogueIndex])));
                 updateCharacterPosition(characterImage); // 캐릭터 위치 업데이트
-                updateLabelPosition(dialogueLabel); // 대사 라벨 위치 업데이트
+                updateDialoguePosition(dialoguePane); // 대사창 위치 업데이트
             } else {
                 // 대화 종료 후 게임플레이 화면으로 전환
                 primaryStage.setScene(gamePlay.getScene(primaryStage));
@@ -90,27 +105,25 @@ public class DialogueScene {
     private void updateCharacterPosition(ImageView characterImage) {
         // 대화 인덱스에 따라 캐릭터 위치 변경
         if (dialogueIndex % 2 == 0) {
-            // 주인공: 오른쪽 아래
+            // 주인공: 왼쪽 아래
             characterImage.setLayoutX(0); // X 좌표
-            characterImage.setLayoutY(378); // Y 좌표
+            characterImage.setLayoutY(304); // Y 좌표
         } else {
-            // 보스: 왼쪽 아래
-            characterImage.setLayoutX(660); // X 좌표
-            characterImage.setLayoutY(378); // Y 좌표
+            // 보스: 오른쪽 아래
+            characterImage.setLayoutX(604); // X 좌표
+            characterImage.setLayoutY(304); // Y 좌표
         }
     }
 
-    
-    private void updateLabelPosition(Label dialogueLabel) {
-        // 대화 인덱스에 따라 라벨 위치 변경
+    private void updateDialoguePosition(StackPane dialoguePane) {
+        // 대화 인덱스에 따라 대사창 위치 변경
         if (dialogueIndex % 2 == 0) {
-            // 주인공 대사: 라벨 왼쪽으로 배치
-            dialogueLabel.setLayoutX(140); // X 좌표
-            dialogueLabel.setLayoutY(380); // Y 좌표
+            // 첫 번째, 세 번째 대사: 기존 위치 유지
+            dialoguePane.setLayoutX(199); // X 좌표
         } else {
-            // 보스 대사: 라벨 오른쪽으로 배치
-            dialogueLabel.setLayoutX(0); // X 좌표
-            dialogueLabel.setLayoutY(380); // Y 좌표
+            // 두 번째, 네 번째 대사: X 좌표를 0으로 변경
+            dialoguePane.setLayoutX(0); // X 좌표
         }
+        dialoguePane.setLayoutY(304); // Y 좌표는 동일
     }
 }
