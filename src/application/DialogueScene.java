@@ -39,7 +39,7 @@ public class DialogueScene {
         // 캐릭터 이미지
         ImageView characterImage = new ImageView(new Image(getClass().getResourceAsStream(characterImages[dialogueIndex])));
         characterImage.setFitWidth(140);
-        characterImage.setFitHeight(122);
+        characterImage.setFitHeight(140);
         updateCharacterPosition(characterImage); // 캐릭터 위치 설정
         root.getChildren().add(characterImage);
 
