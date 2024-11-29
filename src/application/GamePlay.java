@@ -160,13 +160,6 @@ public class GamePlay {
     }
 
     private void setupMessageLabels(Pane root) {
-        // 게임 오버 라벨
-        gameOverLabel.setTextFill(Color.RED);
-        gameOverLabel.setStyle("-fx-font-size: 48px;");
-        gameOverLabel.setLayoutX(250);
-        gameOverLabel.setLayoutY(200);
-        gameOverLabel.setVisible(false);
-        root.getChildren().add(gameOverLabel);
 
         // 게임 클리어 라벨
         gameClearLabel.setTextFill(Color.BLUE);
