@@ -26,7 +26,7 @@ public class GamePlay {
     
     private boolean isSliding = false; // 슬라이드 상태를 나타내는 변수
     
-    private double SCROLL_SPEED = 5; // 초기 스크롤 속도
+    private double SCROLL_SPEED = 3; // 초기 스크롤 속도
     private static final int ITEM_SPACING = 50;
     
     private static final int TOTAL_STAGES = 4; // 총 4개의 스테이지
@@ -38,7 +38,7 @@ public class GamePlay {
     
     private List<ImageView> platforms; // 여러 발판을 관리하는 리스트
     private static final double PLATFORM_HEIGHT = 20; // 발판 높이
-    private static final double PLATFORM_SCROLL_SPEED = 5; // 발판 스크롤 속도
+    private static final double PLATFORM_SCROLL_SPEED = 2; // 발판 스크롤 속도
 
     
     private double characterY = 300;
@@ -64,7 +64,7 @@ public class GamePlay {
     
     private List<ImageView> items = new ArrayList<>(); // 아이템 리스트
     private long lastItemSpawnTime = 0; // 마지막 아이템 생성 시간
-    private static final long ITEM_SPAWN_INTERVAL = 300_000_000L; // 1초(나노초 단위)
+    private static final long ITEM_SPAWN_INTERVAL = 300_000_000L; // 0.3초(나노초 단위)
     
     private List<Image> stageBackgrounds;
     private ImageView background;
@@ -147,7 +147,8 @@ public class GamePlay {
                 	spawnItem(root, now); // 아이템 생성
                     updateItems(root); // 아이템 이동 및 삭제
                     update(now);  // 캐릭터 및 기타 요소 업데이트
-                    if (inBattle && now - lastProjectileTime > 1_000_000_000) {
+                    if (inBattle && now - lastProjectileTime > 2_000_000_000) {
+ 
                         spawnEnemyProjectile(root);
                         lastProjectileTime = now;
                     }
@@ -164,7 +165,7 @@ public class GamePlay {
     	if (inBattle) {
             return; // 보스맵에서는 아이템 생성 중단
         }
-        if (now - lastItemSpawnTime >= ITEM_SPAWN_INTERVAL) { // 1초마다 아이템 생성
+        if (now - lastItemSpawnTime >= ITEM_SPAWN_INTERVAL) { // 0.3초마다 아이템 생성
             ImageView item = new ImageView(new Image(getClass().getResourceAsStream("/application/img/yakgwa.png")));
             item.setFitWidth(30);
             item.setFitHeight(30);
@@ -206,19 +207,21 @@ public class GamePlay {
     
     // 발판 초기화 메서드 추가
     private void initializePlatform(Pane root) {
-        // 발판 이미지 리스트 초기화
-        platformImages = new ArrayList<>();
+    	// 발판 이미지 리스트 초기화 (높이를 지정하여 생성)
+    	platformImages = new ArrayList<>();
         platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding1.png"))); // 스테이지 1 발판
         platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding2.png"))); // 스테이지 2 발판
         platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding3.png"))); // 스테이지 3 발판
         platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding4.png"))); // 스테이지 4 발판
 
-        // 초기 발판 설정
-        platform = new ImageView(platformImages.get(0));
-        platform.setFitWidth(100); // 발판 너비 설정
-        platform.setFitHeight(20); // 발판 높이 설정
-        platform.setX(character.getX() + (RUNNING_WIDTH - 100) / 2); // 캐릭터 아래 가운데 위치
-        platform.setY(characterY + RUNNING_HEIGHT);
+        // 초기 발판 설정 (맵에서 고정된 위치로 설정)
+        platform = new ImageView(platformImages.get(0)); // 첫 번째 발판 이미지 사용
+        platform.setFitWidth(800); // 발판 너비 설정 (맵 크기에 맞춤)
+        platform.setFitHeight(120);
+        platform.setY(395); // 발판의 Y 좌표를 고정 (맵 바닥 근처에 고정)
+        platform.setX(0); // 발판의 X 좌표를 고정 (맵 왼쪽에 고정)
+
+        // 발판을 루트 노드에 추가
         root.getChildren().add(platform);
     }
 
@@ -415,8 +418,7 @@ public class GamePlay {
             }
 
             character.setY(characterY); // 캐릭터의 위치를 업데이트
-            platform.setX(character.getX() + (RUNNING_WIDTH - platform.getFitWidth()) / 2); // 캐릭터 X 위치에 맞춤
-            platform.setY(characterY + RUNNING_HEIGHT); // 캐릭터 바로 아래 위치	
+           
         }
     }
 
