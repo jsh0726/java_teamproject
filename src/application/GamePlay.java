@@ -70,9 +70,10 @@ public class GamePlay {
     private ImageView background;
     private LifeIndicator lifeIndicator;
     private Label enemyHealthLabel;private Pane root;
-    
-    
-    
+    // 체력바 관련 변수
+    private ImageView healthBar; // 체력바 이미지
+    private int currentHealthState = 6; // 체력 상태를 나타내는 변수 (총 6단계: 30 ~ 0)
+
     public Scene getScene(Stage primaryStage) {
         Pane root = new Pane();
         Scene scene = new Scene(root, 800, 500);
@@ -187,7 +188,7 @@ public class GamePlay {
             if (character.getBoundsInParent().intersects(item.getBoundsInParent())) {
                 // 점수 증가
                 score += 100;
-                scoreLabel.setText("Score: " + score);
+                scoreLabel.setText(" " + score);
 
                 // 아이템 삭제
                 root.getChildren().remove(item);
@@ -262,6 +263,15 @@ public class GamePlay {
         enemyHealthLabel.setStyle("-fx-font-size: 24px; -fx-text-fill: red; -fx-font-weight: bold;");
         enemyHealthLabel.setVisible(false);
         root.getChildren().add(enemyHealthLabel);
+        
+        // 체력바 이미지 초기화
+        healthBar = new ImageView(new Image(getClass().getResourceAsStream("/application/img/health_30.png")));
+        healthBar.setFitWidth(150); // 체력바 크기 설정
+        healthBar.setFitHeight(80);
+        healthBar.setLayoutX(635); // 적 체력바 위치
+        healthBar.setLayoutY(195); // 적 체력바 위치
+        healthBar.setVisible(false); // 전투 시작 전에는 보이지 않음
+        root.getChildren().add(healthBar);
     }
 
     private void setupKeyHandlers(Scene scene) {
@@ -309,15 +319,33 @@ public class GamePlay {
     
     // 적을 공격하는 메서드
     private void attackEnemy() {
-        // 적 체력을 1 감소
+    	 // 적 체력을 1 감소
         enemyHealth--;
 
-        // 적 체력 라벨 업데이트
-        enemyHealthLabel.setText(String.valueOf(enemyHealth));
+     // 체력이 0 이상일 때만 체력 바 업데이트
+        if (enemyHealth > 0) {
+            updateHealthBar();
+        }
 
         // 적 체력이 0 이하일 경우 승리 처리
         if (enemyHealth <= 0) {
             winBattle();
+        }
+    }
+    
+    private void updateHealthBar() {
+        // 체력이 0 이상이고 5의 배수일 때만 체력 바 이미지를 업데이트
+        if (enemyHealth > 0 && enemyHealth % 5 == 0) {
+            int healthState = enemyHealth / 5; // 현재 체력 상태 계산
+            if (healthState != currentHealthState) {
+                currentHealthState = healthState;
+                String healthImagePath = "/application/img/health_" + (healthState * 5) + ".png";
+                try {
+                    healthBar.setImage(new Image(getClass().getResourceAsStream(healthImagePath)));
+                } catch (Exception e) {
+                    System.out.println("체력바 이미지 로드 실패: " + healthImagePath);
+                }
+            }
         }
     }
     
@@ -480,7 +508,7 @@ public class GamePlay {
         inBattle = true;
         battleLabel.setVisible(true);
         enemy.setVisible(true);
-        enemyHealthLabel.setVisible(true);
+        healthBar.setVisible(true);
         
         // 장애물 및 아이템 제거
         for (Rectangle obstacle : obstacles) {
