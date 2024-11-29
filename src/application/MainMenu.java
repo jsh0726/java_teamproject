@@ -14,7 +14,8 @@ import javafx.stage.Stage;
 public class MainMenu {
     public Scene getScene(Stage primaryStage) {
         Pane root = new Pane(); // 절대 위치 설정을 위한 Pane 사용
-
+ 
+        
         // 배경 이미지 설정
         Image backgroundImage = new Image(getClass().getResource("/application/img/main.png").toExternalForm());
         BackgroundImage bgImage = new BackgroundImage(
