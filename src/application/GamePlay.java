@@ -11,7 +11,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
