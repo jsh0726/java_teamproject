@@ -22,6 +22,7 @@ public class GameOver {
             System.err.println("Error: Could not load gamelose.gif. Check the file path.");
             background = new ImageView();
         }
+        
 
         // 돌아가기 버튼 생성
         ImageView backButtonImage = new ImageView(new Image(getClass().getResource("/application/img/btn_back.png").toExternalForm()));

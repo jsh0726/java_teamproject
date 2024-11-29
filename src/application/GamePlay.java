@@ -215,7 +215,6 @@ public class GamePlay {
         });
     }
 
-
     private void update(long now) {
         // 보스 등장 조건
         if (!inBattle && now - startTime >= BOSS_APPEAR_TIME) {

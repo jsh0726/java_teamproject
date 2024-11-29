@@ -66,6 +66,7 @@ public class GameInstructions {
             MainMenu mainMenu = new MainMenu();
             primaryStage.setScene(mainMenu.getScene(primaryStage));
         });
+        
 
         // "게임 시작" 클릭 이벤트 설정
         startButton.setOnMouseClicked(e -> {
@@ -81,3 +82,4 @@ public class GameInstructions {
         return new Scene(root, 800, 500);
     }
 }
+

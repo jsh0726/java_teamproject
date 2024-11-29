@@ -100,6 +100,7 @@ public class DialogueScene {
         }
     }
 
+    
     private void updateLabelPosition(Label dialogueLabel) {
         // 대화 인덱스에 따라 라벨 위치 변경
         if (dialogueIndex % 2 == 0) {
