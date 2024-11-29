@@ -31,8 +31,14 @@ public class GamePlay {
     
     private static final int TOTAL_STAGES = 4; // 총 4개의 스테이지
     private int currentStage = 0; // 현재 스테이지
-    private static final long STAGE_DURATION = 15L * 1_000_000_000L; // 각 스테이지의 지속 시간 (15초)
+    private static final long STAGE_DURATION = 5L * 1_000_000_000L; // 각 스테이지의 지속 시간 (15초)
     private long stageStartTime; // 각 스테이지 시작 시간 기록
+    private List<Image> platformImages;
+    private ImageView platform;
+    private List<ImageView> platforms; // 여러 발판을 관리하는 리스트
+    private static final double PLATFORM_HEIGHT = 20; // 발판 높이
+    private static final double PLATFORM_SCROLL_SPEED = 5; // 발판 스크롤 속도
+
     
     private double characterY = 300;
     private double characterVelocityY = 0;
@@ -44,22 +50,23 @@ public class GamePlay {
     private ImageView enemy;
     private Rectangle[] obstacles;
     private List<ImageView> items;
-    private Label gameOverLabel, scoreLabel, livesLabel, gameClearLabel, battleLabel;
+    private Label  scoreLabel, battleLabel;
     private boolean gameOver = false;
     private boolean gameClear = false;
     private boolean inBattle = false;
     private int score = 0;
-    private int lives = 50;
+    private int lives = 30;
     private int enemyHealth = 30;
     
     private List<Circle> enemyProjectiles = new ArrayList<>();
     private long lastProjectileTime = 0;
     private List<Image> stageBackgrounds;
     private ImageView background;
+    private LifeIndicator lifeIndicator;
 
-    
     private Label enemyHealthLabel;
     private long startTime; // 게임 시작 시간
+    
     
     public Scene getScene(Stage primaryStage) {
         Pane root = new Pane();
@@ -77,7 +84,7 @@ public class GamePlay {
         background.setFitWidth(800);
         background.setFitHeight(500);
         root.getChildren().add(background);
-
+        
         // 캐릭터 이미지
         try {
             Image runningImage = new Image(getClass().getResourceAsStream("/application/img/runningBy256.gif"));
@@ -94,7 +101,7 @@ public class GamePlay {
             System.out.println("러닝 이미지 로드 중 예외 발생: " + e.getMessage());
         }
 
-        	// 장애물 생성
+        // 장애물 생성
         obstacles = new Rectangle[3];
         for (int i = 0; i < obstacles.length; i++) {
             double randomY = (Math.random() < 0.5) ? 370 : 320; // Y 좌표를 370 또는 320 중 랜덤으로 선택
@@ -103,7 +110,7 @@ public class GamePlay {
             root.getChildren().add(obstacles[i]);
         }
 
-        // 아이템
+        //아이템
         items = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             ImageView item = new ImageView(new Image(getClass().getResourceAsStream("/application/img/yakgwa.png")));
@@ -116,10 +123,8 @@ public class GamePlay {
         }
 
         // 라벨 생성
-        scoreLabel = new Label("Score: 0");
-        livesLabel = new Label("Lives: 50");
-        gameOverLabel = new Label("Game Over");
-        gameClearLabel = new Label("Game Clear!");
+        scoreLabel = new Label("0");
+        lifeIndicator = new LifeIndicator(5, root, 640, 20);
         battleLabel = new Label("Fight the Enemy!");
         enemyHealthLabel = new Label(String.valueOf(enemyHealth));
 
@@ -134,6 +139,7 @@ public class GamePlay {
         enemy.setY(250);
         enemy.setVisible(false);
         root.getChildren().add(enemy);
+        initializePlatform(root);
 
         // 키 입력 처리
         setupKeyHandlers(scene);
@@ -157,32 +163,51 @@ public class GamePlay {
         return scene;
     }
     
+    // 발판 초기화 메서드 추가
+    private void initializePlatform(Pane root) {
+        // 발판 이미지 리스트 초기화
+        platformImages = new ArrayList<>();
+        platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding1.png"))); // 스테이지 1 발판
+        platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding2.png"))); // 스테이지 2 발판
+        platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding3.png"))); // 스테이지 3 발판
+        platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding4.png"))); // 스테이지 4 발판
+
+        // 초기 발판 설정
+        platform = new ImageView(platformImages.get(0));
+        platform.setFitWidth(100); // 발판 너비 설정
+        platform.setFitHeight(20); // 발판 높이 설정
+        platform.setX(character.getX() + (RUNNING_WIDTH - 100) / 2); // 캐릭터 아래 가운데 위치
+        platform.setY(characterY + RUNNING_HEIGHT);
+        root.getChildren().add(platform);
+    }
+
+    // 발판 이미지 업데이트 메서드
+    private void updatePlatformImage() {
+        if (currentStage - 1 < platformImages.size()) {
+            platform.setImage(platformImages.get(currentStage - 1));
+        }
+    }
+    
     private void setupLabels(Pane root) {
-        // 점수 및 생명 라벨
-        scoreLabel.setLayoutX(600);
-        scoreLabel.setLayoutY(20);
+    	// 점수 배경 이미지
+        ImageView scoreBackground = new ImageView(new Image(getClass().getResourceAsStream("/application/img/score.png")));
+        scoreBackground.setFitWidth(120); // 배경 크기 조정
+        scoreBackground.setFitHeight(40);
+        scoreBackground.setLayoutX(500); // X 좌표 설정
+        scoreBackground.setLayoutY(20); // y 좌표 설정
+        root.getChildren().add(scoreBackground);
+
+        // 점수 라벨
+        scoreLabel.setLayoutX(530);
+        scoreLabel.setLayoutY(25);
         scoreLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: black;");
         root.getChildren().add(scoreLabel);
-
-        livesLabel.setLayoutX(700);
-        livesLabel.setLayoutY(20);
-        livesLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: black;");
-        root.getChildren().add(livesLabel);
 
         // 기타 라벨
         setupMessageLabels(root);
     }
 
     private void setupMessageLabels(Pane root) {
-
-        // 게임 클리어 라벨
-        gameClearLabel.setTextFill(Color.BLUE);
-        gameClearLabel.setStyle("-fx-font-size: 48px;");
-        gameClearLabel.setLayoutX(250);
-        gameClearLabel.setLayoutY(200);
-        gameClearLabel.setVisible(false);
-        root.getChildren().add(gameClearLabel);
-
         // 전투 라벨
         battleLabel.setTextFill(Color.PURPLE);
         battleLabel.setStyle("-fx-font-size: 32px;");
@@ -216,7 +241,7 @@ public class GamePlay {
                 character.setFitHeight(SLIDE_HEIGHT);
                 character.setY(350); // 슬라이드 시 Y 좌표를 350으로 고정
             }
-         // 적 공격 로직
+            // 적 공격 로직
             if (event.getCode() == KeyCode.A && inBattle && !gameOver && enemy.isVisible()) { 
                 attackEnemy(); // 적 공격 메서드 호출
             }
@@ -247,14 +272,15 @@ public class GamePlay {
         }
     }
     
- // 전투에서 승리했을 때 처리
+    // 전투에서 승리했을 때 처리
     private void winBattle() {
-        inBattle = false; // 전투 상태 종료
-        battleLabel.setVisible(false); // 전투 라벨 숨기기
-        enemy.setVisible(false); // 적 숨기기
-        enemyHealthLabel.setVisible(false); // 적 체력 라벨 숨기기
-        gameClearLabel.setVisible(true); // 게임 클리어 라벨 표시
+    	inBattle = false; // 전투 상태 종료
         gameClear = true; // 게임 클리어 상태로 전환
+
+        // 게임 클리어 화면으로 전환
+        GameClear gameClearScene = new GameClear();
+        Stage primaryStage = (Stage) character.getScene().getWindow(); // 현재 Stage 가져오기
+        primaryStage.setScene(gameClearScene.createGameClearScene(primaryStage, score)); // 새로운 클리어 화면으로 전환
     }
     
     private void update(long now) {
@@ -269,6 +295,7 @@ public class GamePlay {
                 // 배경 이미지 변경
                 if (currentStage - 1 < stageBackgrounds.size()) {
                     background.setImage(stageBackgrounds.get(currentStage - 1));
+                    updatePlatformImage(); // 발판 이미지 업데이트
                 }
                 
                 if (currentStage == TOTAL_STAGES) {
@@ -312,6 +339,8 @@ public class GamePlay {
             }
 
             character.setY(characterY); // 캐릭터의 위치를 업데이트
+            platform.setX(character.getX() + (RUNNING_WIDTH - platform.getFitWidth()) / 2); // 캐릭터 X 위치에 맞춤
+            platform.setY(characterY + RUNNING_HEIGHT); // 캐릭터 바로 아래 위치	
         }
     }
 
@@ -388,7 +417,7 @@ public class GamePlay {
             }
             if (character.getBoundsInParent().intersects(item.getBoundsInParent())) {
                 score += 100;
-                scoreLabel.setText("Score: " + score);
+                scoreLabel.setText(" " + score);
                 item.setX(800 + Math.random() * ITEM_SPACING);
                 
                 }
@@ -405,12 +434,13 @@ public class GamePlay {
         return characterHitBox.getBoundsInParent().intersects(obstacle.getBoundsInParent());
     }
     
+    // 생명 5개 깎이면 gameOver
     private void reduceLife() {
-        lives--;
-        livesLabel.setText("Lives: " + lives);
-        if (lives <= 0) {
-            gameOver();
-        }
+    	// lifeLabel 대신 lifeIndicator로 수정
+        lifeIndicator.reduceLife();
+//        if (lifeIndicator.getLives() <= 0) {
+//            gameOver();
+//        }
     }
     
     private void startBattle() {
