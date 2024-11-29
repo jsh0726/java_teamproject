@@ -26,15 +26,20 @@ public class GamePlay {
     private static final double SLIDE_WIDTH = 50; // 슬라이드 상태 캐릭터 너비
     private static final double SLIDE_HEIGHT = 50; // 슬라이드 상태 캐릭터 높이
     
-    // 1분(60초)을 나노초 단위로 설정
-    private static final long BOSS_APPEAR_TIME = 60L * 1_000_000_000L; 
+    private double SCROLL_SPEED = 5; // 초기 스크롤 속도
+    private static final int ITEM_SPACING = 50;
+    
+    private static final int TOTAL_STAGES = 4; // 총 4개의 스테이지
+    private int currentStage = 0; // 현재 스테이지
+    private static final long STAGE_DURATION = 15L * 1_000_000_000L; // 각 스테이지의 지속 시간 (15초)
+    private long stageStartTime; // 각 스테이지 시작 시간 기록
+    
     private double characterY = 300;
     private double characterVelocityY = 0;
     private boolean isJumping = false;
     private static final double GRAVITY = 0.7;
     private static final double JUMP_STRENGTH = -15;
-    private static final double SCROLL_SPEED = 5;
-    private static final int ITEM_SPACING = 50;
+    
     private ImageView character;
     private ImageView enemy;
     private Rectangle[] obstacles;
@@ -44,23 +49,33 @@ public class GamePlay {
     private boolean gameClear = false;
     private boolean inBattle = false;
     private int score = 0;
-    private int lives = 3;
+    private int lives = 50;
     private int enemyHealth = 30;
     
     private List<Circle> enemyProjectiles = new ArrayList<>();
-    private long startTime; // 게임 시작 시간
     private long lastProjectileTime = 0;
+    private List<Image> stageBackgrounds;
+    private ImageView background;
 
-    private Label enemyHealthLabel;private Pane root;
+    
+    private Label enemyHealthLabel;
+    private long startTime; // 게임 시작 시간
     
     public Scene getScene(Stage primaryStage) {
         Pane root = new Pane();
-        Scene scene = new Scene(root, 896, 512);
+        Scene scene = new Scene(root, 800, 500);
 
-        // 배경 이미지
-        ImageView background = new ImageView(new Image(getClass().getResourceAsStream("/application/img/stage1.png")));
-        background.setFitWidth(896);
-        background.setFitHeight(512);
+        // 배경 이미지 리스트 초기화
+        stageBackgrounds = new ArrayList<>();
+        stageBackgrounds.add(new Image(getClass().getResourceAsStream("/application/img/stage1.png"))); // 스테이지 1 배경
+        stageBackgrounds.add(new Image(getClass().getResourceAsStream("/application/img/stage2.png"))); // 스테이지 2 배경
+        stageBackgrounds.add(new Image(getClass().getResourceAsStream("/application/img/stage3.png"))); // 스테이지 3 배경
+        stageBackgrounds.add(new Image(getClass().getResourceAsStream("/application/img/stage4.png"))); // 스테이지 4 배경 (보스)
+
+        // 초기 배경 이미지 설정
+        background = new ImageView(stageBackgrounds.get(0));
+        background.setFitWidth(800);
+        background.setFitHeight(500);
         root.getChildren().add(background);
 
         // 캐릭터 이미지
@@ -79,7 +94,7 @@ public class GamePlay {
             System.out.println("러닝 이미지 로드 중 예외 발생: " + e.getMessage());
         }
 
-     // 장애물 생성
+        	// 장애물 생성
         obstacles = new Rectangle[3];
         for (int i = 0; i < obstacles.length; i++) {
             double randomY = (Math.random() < 0.5) ? 370 : 320; // Y 좌표를 370 또는 320 중 랜덤으로 선택
@@ -87,8 +102,6 @@ public class GamePlay {
             obstacles[i].setFill(Color.BLACK);
             root.getChildren().add(obstacles[i]);
         }
-
-
 
         // 아이템
         items = new ArrayList<>();
@@ -104,7 +117,7 @@ public class GamePlay {
 
         // 라벨 생성
         scoreLabel = new Label("Score: 0");
-        livesLabel = new Label("Lives: 3");
+        livesLabel = new Label("Lives: 50");
         gameOverLabel = new Label("Game Over");
         gameClearLabel = new Label("Game Clear!");
         battleLabel = new Label("Fight the Enemy!");
@@ -125,6 +138,7 @@ public class GamePlay {
         // 키 입력 처리
         setupKeyHandlers(scene);
         startTime = System.nanoTime(); // 게임 시작 시간 기록
+        
         // 게임 루프
         AnimationTimer timer = new AnimationTimer() {
             @Override
@@ -202,6 +216,10 @@ public class GamePlay {
                 character.setFitHeight(SLIDE_HEIGHT);
                 character.setY(350); // 슬라이드 시 Y 좌표를 350으로 고정
             }
+         // 적 공격 로직
+            if (event.getCode() == KeyCode.A && inBattle && !gameOver && enemy.isVisible()) { 
+                attackEnemy(); // 적 공격 메서드 호출
+            }
         });
 
         scene.setOnKeyReleased(event -> {
@@ -214,11 +232,49 @@ public class GamePlay {
             }
         });
     }
+    
+    // 적을 공격하는 메서드
+    private void attackEnemy() {
+        // 적 체력을 1 감소
+        enemyHealth--;
 
+        // 적 체력 라벨 업데이트
+        enemyHealthLabel.setText(String.valueOf(enemyHealth));
+
+        // 적 체력이 0 이하일 경우 승리 처리
+        if (enemyHealth <= 0) {
+            winBattle();
+        }
+    }
+    
+ // 전투에서 승리했을 때 처리
+    private void winBattle() {
+        inBattle = false; // 전투 상태 종료
+        battleLabel.setVisible(false); // 전투 라벨 숨기기
+        enemy.setVisible(false); // 적 숨기기
+        enemyHealthLabel.setVisible(false); // 적 체력 라벨 숨기기
+        gameClearLabel.setVisible(true); // 게임 클리어 라벨 표시
+        gameClear = true; // 게임 클리어 상태로 전환
+    }
+    
     private void update(long now) {
-        // 보스 등장 조건
-        if (!inBattle && now - startTime >= BOSS_APPEAR_TIME) {
-            startBattle();
+    	// 스테이지 전환 조건
+        if (!inBattle && now - stageStartTime >= STAGE_DURATION) {
+            if (currentStage < TOTAL_STAGES) {
+                stageStartTime = now; // 새로운 스테이지 시작 시간 기록
+                System.out.println("Stage " + currentStage + " 시작! 속도: " + SCROLL_SPEED);
+                currentStage++; // 현재 스테이지 증가
+                SCROLL_SPEED += 1; // 스크롤 속도 증가로 난이도 조절
+                
+                // 배경 이미지 변경
+                if (currentStage - 1 < stageBackgrounds.size()) {
+                    background.setImage(stageBackgrounds.get(currentStage - 1));
+                }
+                
+                if (currentStage == TOTAL_STAGES) {
+                    startBattle();
+                }
+            }
         }
 
         // 캐릭터 위치 업데이트
@@ -310,7 +366,7 @@ public class GamePlay {
                 obstacle.setY(newY);
 
                 // 디버깅용 로그
-                System.out.println("Obstacle " + i + " positioned at X: " + newX + ", Y: " + newY);
+                //System.out.println("Obstacle " + i + " positioned at X: " + newX + ", Y: " + newY);
             }
 
             // 캐릭터와 장애물 충돌 체크
@@ -324,17 +380,6 @@ public class GamePlay {
         }
     }
     
-    private boolean checkCollision(Rectangle obstacle) {
-        Rectangle characterHitBox = new Rectangle(
-            character.getX() + 10, // 캐릭터의 히트 박스를 약간 안쪽으로 조정
-            character.getY() + 10,
-            character.getFitWidth() - 20,
-            character.getFitHeight() - 20
-        );
-        return characterHitBox.getBoundsInParent().intersects(obstacle.getBoundsInParent());
-    }
-
-
     private void handleItems() {
         for (ImageView item : items) {
             item.setX(item.getX() - SCROLL_SPEED);
@@ -350,12 +395,37 @@ public class GamePlay {
             }
         }
     
-
+    private boolean checkCollision(Rectangle obstacle) {
+        Rectangle characterHitBox = new Rectangle(
+            character.getX() + 10, // 캐릭터의 히트 박스를 약간 안쪽으로 조정
+            character.getY() + 10,
+            character.getFitWidth() - 20,
+            character.getFitHeight() - 20
+        );
+        return characterHitBox.getBoundsInParent().intersects(obstacle.getBoundsInParent());
+    }
+    
+    private void reduceLife() {
+        lives--;
+        livesLabel.setText("Lives: " + lives);
+        if (lives <= 0) {
+            gameOver();
+        }
+    }
+    
     private void startBattle() {
         inBattle = true;
         battleLabel.setVisible(true);
         enemy.setVisible(true);
         enemyHealthLabel.setVisible(true);
+        
+     // 장애물 및 아이템 제거
+        for (Rectangle obstacle : obstacles) {
+            obstacle.setVisible(false); // 장애물 숨김
+        }
+        for (ImageView item : items) {
+            item.setVisible(false); // 아이템 숨김
+        }
     }
 
     private void spawnEnemyProjectile(Pane root) {
@@ -381,14 +451,6 @@ public class GamePlay {
                 projectile.setVisible(false);
                 iterator.remove();
             }
-        }
-    }
-    
-    private void reduceLife() {
-        lives--;
-        livesLabel.setText("Lives: " + lives);
-        if (lives <= 0) {
-            gameOver();
         }
     }
 
