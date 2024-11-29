@@ -39,7 +39,7 @@ public class DialogueScene {
         // 캐릭터 이미지
         ImageView characterImage = new ImageView(new Image(getClass().getResourceAsStream(characterImages[dialogueIndex])));
         characterImage.setFitWidth(140);
-        characterImage.setFitHeight(140);
+        characterImage.setFitHeight(122);
         updateCharacterPosition(characterImage); // 캐릭터 위치 설정
         root.getChildren().add(characterImage);
 
@@ -51,12 +51,12 @@ public class DialogueScene {
         dialogueLabel.setAlignment(Pos.CENTER);
         dialogueLabel.setStyle("-fx-background-color: #eec39a; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-padding: 15px;");
         dialogueLabel.setPrefWidth(660); // 라벨 가로 크기 고정
-        dialogueLabel.setPrefHeight(130); // 라벨 세로 크기 고정
+        dialogueLabel.setPrefHeight(120); // 라벨 세로 크기 고정
         updateLabelPosition(dialogueLabel); // 대사 라벨 초기 위치 설정
         root.getChildren().add(dialogueLabel);
 
-        // 화면 클릭 이벤트 추가
-        scene.setOnMouseClicked(event -> {
+        // 대사 진행 로직
+        Runnable advanceDialogue = () -> {
             dialogueIndex++;
             if (dialogueIndex < dialogues.length) {
                 // 다음 대사로 갱신
@@ -68,6 +68,20 @@ public class DialogueScene {
                 // 대화 종료 후 게임플레이 화면으로 전환
                 primaryStage.setScene(gamePlay.getScene(primaryStage));
             }
+        };
+
+        // 화면 클릭 이벤트 추가
+        scene.setOnMouseClicked(event -> advanceDialogue.run());
+
+        // 스페이스바 입력 이벤트 추가
+        scene.setOnKeyPressed(event -> {
+            switch (event.getCode()) {
+                case SPACE:
+                    advanceDialogue.run();
+                    break;
+                default:
+                    break;
+            }
         });
 
         return scene;
@@ -78,11 +92,11 @@ public class DialogueScene {
         if (dialogueIndex % 2 == 0) {
             // 주인공: 오른쪽 아래
             characterImage.setLayoutX(0); // X 좌표
-            characterImage.setLayoutY(360); // Y 좌표
+            characterImage.setLayoutY(378); // Y 좌표
         } else {
             // 보스: 왼쪽 아래
             characterImage.setLayoutX(660); // X 좌표
-            characterImage.setLayoutY(360); // Y 좌표
+            characterImage.setLayoutY(378); // Y 좌표
         }
     }
 

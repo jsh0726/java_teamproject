@@ -23,11 +23,12 @@ public class GameOver {
             background = new ImageView();
         }
 
-        // 다시시작 버튼 생성
+        // 돌아가기 버튼 생성
         ImageView backButtonImage = new ImageView(new Image(getClass().getResource("/application/img/btn_back.png").toExternalForm()));
         backButtonImage.setFitWidth(150); // 기본 크기 설정
         backButtonImage.setFitHeight(60);
         Button backButton = new Button("", backButtonImage);
+        backButton.setFocusTraversable(false);
         backButton.setStyle("-fx-background-color: transparent;");
         backButton.setOnAction(e -> {
             System.out.println("메인 메뉴로 돌아갑니다."); // 디버그 메시지
@@ -40,6 +41,7 @@ public class GameOver {
         endButtonImage.setFitWidth(150); // 기본 크기 설정
         endButtonImage.setFitHeight(60);
         Button endButton = new Button("", endButtonImage);
+        endButton.setFocusTraversable(false);
         endButton.setStyle("-fx-background-color: transparent;");
         endButton.setOnAction(e -> {
             System.out.println("게임 종료"); // 디버그 메시지
