@@ -31,7 +31,7 @@ public class GamePlay {
     
     private static final int TOTAL_STAGES = 4; // 총 4개의 스테이지
     private int currentStage = 0; // 현재 스테이지
-    private static final long STAGE_DURATION = 5L * 1_000_000_000L; // 각 스테이지의 지속 시간 (15초)
+    private static final long STAGE_DURATION = 10L * 1_000_000_000L; // 각 스테이지의 지속 시간 (15초)
     private long stageStartTime; // 각 스테이지 시작 시간 기록
     private List<Image> platformImages;
     private ImageView platform;
@@ -44,12 +44,12 @@ public class GamePlay {
     private double characterY = 300;
     private double characterVelocityY = 0;
     private boolean isJumping = false;
-    private static final double GRAVITY = 0.7;
-    private static final double JUMP_STRENGTH = -15;
-    
+    private static final double GRAVITY = 0.9;
+    private static final double JUMP_STRENGTH = -20;
+    private List<ImageView> obstacles; // 장애물을 저장할 리스트
+
     private ImageView character;
     private ImageView enemy;
-    private Rectangle[] obstacles;
     private Label  scoreLabel, battleLabel;
     private boolean gameOver = false;
     private boolean gameClear = false;
@@ -57,7 +57,8 @@ public class GamePlay {
     private int score = 0;
     private int lives = 30;
     private int enemyHealth = 30;
-    
+    private List<Image> highObstacles; // 370용 이미지 리스트
+    private List<Image> lowObstacles;  // 320용 이미지 리스트
     private List<Circle> enemyProjectiles = new ArrayList<>();
     private long startTime; // 게임 시작 시간
     private long lastProjectileTime = 0;
@@ -90,7 +91,10 @@ public class GamePlay {
         background.setFitWidth(800);
         background.setFitHeight(500);
         root.getChildren().add(background);
-        
+        // 장애물 이미지 및 초기화 호출
+        initializeObstacleImages();
+        initializeObstacles(root);
+
         // 캐릭터 이미지
         try {
             Image runningImage = new Image(getClass().getResourceAsStream("/application/img/runningBy256.gif"));
@@ -107,14 +111,8 @@ public class GamePlay {
             System.out.println("러닝 이미지 로드 중 예외 발생: " + e.getMessage());
         }
 
-        // 장애물 생성
-        obstacles = new Rectangle[3];
-        for (int i = 0; i < obstacles.length; i++) {
-            double randomY = (Math.random() < 0.5) ? 370 : 320; // Y 좌표를 370 또는 320 중 랜덤으로 선택
-            obstacles[i] = new Rectangle(800 + i * 300, randomY, 30, 30);
-            obstacles[i].setFill(Color.BLACK);
-            root.getChildren().add(obstacles[i]);
-        }
+        
+        
 
         // 라벨 생성
         scoreLabel = new Label("0");
@@ -204,7 +202,38 @@ public class GamePlay {
             }
         }
     }
-    
+ // 장애물 이미지 초기화 메서드
+    private void initializeObstacleImages() {
+        highObstacles = new ArrayList<>();
+        highObstacles.add(new Image(getClass().getResourceAsStream("/application/img/gangsi.png")));
+        highObstacles.add(new Image(getClass().getResourceAsStream("/application/img/monsterred.png")));
+        highObstacles.add(new Image(getClass().getResourceAsStream("/application/img/monsterblue.png")));
+        highObstacles.add(new Image(getClass().getResourceAsStream("/application/img/jangsanbum.png")));
+
+        lowObstacles = new ArrayList<>();
+        lowObstacles.add(new Image(getClass().getResourceAsStream("/application/img/wisp.gif")));
+        lowObstacles.add(new Image(getClass().getResourceAsStream("/application/img/eyemonster.gif")));
+    }
+
+    // 장애물 초기화 메서드
+    private void initializeObstacles(Pane root) {
+        obstacles = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            double randomY = (Math.random() < 0.5) ? 300 : 250; // Y 좌표 랜덤 선택
+            Image randomImage = (randomY == 300)
+                ? highObstacles.get((int) (Math.random() * highObstacles.size()))
+                : lowObstacles.get((int) (Math.random() * lowObstacles.size()));
+            
+            ImageView obstacle = new ImageView(randomImage);
+            obstacle.setFitWidth(100); // 적절한 크기로 설정
+            obstacle.setFitHeight(100);
+            obstacle.setX(800 + i * 300);
+            obstacle.setY(randomY);
+            
+            obstacles.add(obstacle);
+            root.getChildren().add(obstacle);
+        }
+    }
     // 발판 초기화 메서드 추가
     private void initializePlatform(Pane root) {
     	// 발판 이미지 리스트 초기화 (높이를 지정하여 생성)
@@ -297,7 +326,7 @@ public class GamePlay {
     	        }
     	        character.setFitWidth(RUNNING_WIDTH); // 러닝 이미지 크기 유지
     	        character.setFitHeight(RUNNING_HEIGHT); // 러닝 이미지 크기 유지
-    	        character.setY(350); // 슬라이드 시 Y 좌표를 350으로 고정
+    	        character.setY(300); // 슬라이드 시 Y 좌표를 350으로 고정
     	    }
     	    // 적 공격 로직
     	    if (event.getCode() == KeyCode.A && inBattle && !gameOver && enemy.isVisible()) { 
@@ -424,78 +453,71 @@ public class GamePlay {
 
 
     private void handleObstacles() {
-        // 장애물 가능한 Y 좌표
-        double[] possibleYPositions = {300, 370};
-
-        for (int i = 0; i < obstacles.length; i++) {
-            Rectangle obstacle = obstacles[i];
-
+        for (ImageView obstacle : obstacles) {
             // 장애물 이동
             obstacle.setX(obstacle.getX() - SCROLL_SPEED);
 
             // 장애물이 화면 왼쪽을 벗어나면 재배치
-            if (obstacle.getX() < -30) {
-                double newX;
-                double newY;
-                boolean validPosition;
-
-                int retryCount = 0; // 무한 루프 방지용 카운터
-                int maxRetries = 10; // 최대 시도 횟수
-
-                do {
-                    validPosition = true;
-
-                    // 새 X와 Y 좌표 생성
-                    newX = 800 + Math.random() * 300; // X 좌표를 랜덤 생성
-                    newY = possibleYPositions[(int) (Math.random() * possibleYPositions.length)]; // Y 좌표 랜덤 선택
-
-                    // 다른 장애물들과 간격 확인
-                    for (int j = 0; j < obstacles.length; j++) {
-                        if (i != j) { // 자기 자신 제외
-                            double xDistance = Math.abs(newX - obstacles[j].getX());
-                            if (xDistance < 200) { // 최소 간격 200픽셀 조건
-                                validPosition = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    retryCount++;
-                    if (retryCount > maxRetries) {
-                        System.out.println("Warning: Unable to find valid position for obstacle " + i);
-                        validPosition = true; // 강제 탈출
-                        break;
-                    }
-                } while (!validPosition);
-
-                // 장애물 위치 설정
-                obstacle.setX(newX);
-                obstacle.setY(newY);
-
-                // 디버깅용 로그
-                //System.out.println("Obstacle " + i + " positioned at X: " + newX + ", Y: " + newY);
+            if (obstacle.getX() < -50) {
+                repositionObstacle(obstacle);
             }
 
             // 캐릭터와 장애물 충돌 체크
-            if (checkCollision(obstacle)) {
+            if (checkCollision(character, obstacle)) {
                 reduceLife();
 
-                // 충돌 후 재배치
-                obstacle.setX(800 + Math.random() * 300);
-                obstacle.setY(possibleYPositions[(int) (Math.random() * possibleYPositions.length)]);
+                // 충돌 후 장애물 재배치
+                repositionObstacle(obstacle);
             }
         }
     }
-    
-    private boolean checkCollision(Rectangle obstacle) {
-        Rectangle characterHitBox = new Rectangle(
-            character.getX() + 10, // 캐릭터의 히트 박스를 약간 안쪽으로 조정
-            character.getY() + 10,
-            character.getFitWidth() - 20,
-            character.getFitHeight() - 20
-        );
-        return characterHitBox.getBoundsInParent().intersects(obstacle.getBoundsInParent());
+
+    private void repositionObstacle(ImageView obstacle) {
+        boolean isValidPosition;
+        double newX, newY;
+
+        do {
+            isValidPosition = true;
+            newX = 800 + Math.random() * 300; // X 위치 랜덤 생성
+            newY = (Math.random() < 0.5) ? 300 : 250; // Y 위치 랜덤 선택
+
+            // 다른 장애물들과의 간격 확인
+            for (ImageView other : obstacles) {
+                if (other != obstacle && Math.abs(newX - other.getX()) < 200) { // 최소 간격 100픽셀
+                    isValidPosition = false;
+                    break;
+                }
+            }
+        } while (!isValidPosition);
+
+        // 새 위치로 장애물 설정
+        Image randomImage = (newY == 300)
+            ? highObstacles.get((int) (Math.random() * highObstacles.size()))
+            : lowObstacles.get((int) (Math.random() * lowObstacles.size()));
+
+        obstacle.setImage(randomImage); // 새로운 이미지 설정
+        obstacle.setX(newX); // 새 X 위치 설정
+        obstacle.setY(newY); // 새 Y 위치 설정
     }
+
+
+    
+    private boolean checkCollision(ImageView character, ImageView obstacle) {
+        Rectangle characterHitBox = createHitBox(character, 30);
+        Rectangle obstacleHitBox = createHitBox(obstacle, 30);
+
+        return characterHitBox.getBoundsInParent().intersects(obstacleHitBox.getBoundsInParent());
+    }
+    private Rectangle createHitBox(ImageView imageView, double padding) {
+        return new Rectangle(
+            imageView.getX() + padding,
+            imageView.getY() + padding,
+            imageView.getFitWidth() - 2 * padding,
+            imageView.getFitHeight() - 2 * padding
+        );
+    }
+
+
     
     // 생명 5개 깎이면 gameOver
     private void reduceLife() {
@@ -512,14 +534,15 @@ public class GamePlay {
         enemy.setVisible(true);
         healthBar.setVisible(true);
         
-        // 장애물 및 아이템 제거
-        for (Rectangle obstacle : obstacles) {
+     // 장애물 및 아이템 제거
+        for (ImageView obstacle : obstacles) {
             obstacle.setVisible(false); // 장애물 숨김
         }
         for (ImageView item : items) {
             item.setVisible(false); // 아이템 숨김
         }
     }
+
 
     private void spawnEnemyProjectile(Pane root) {
         Circle projectile = new Circle(enemy.getX() - 10, enemy.getY() + enemy.getFitHeight() / 2, 5);
