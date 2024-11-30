@@ -12,15 +12,14 @@ public class LifeIndicator {
     public LifeIndicator(int initialLives, Pane root, double x, double y) {
         this.lives = initialLives;
         this.lifeImages = new String[]{
-            "/application/img/zero.png",  // 생명 0개
-            "/application/img/one.png", // 생명 1개
-            "/application/img/two.png", // 생명 2개
-            "/application/img/three.png",  // 생명 3개
-            "/application/img/four.png",  // 생명 4개
-            "/application/img/five.png"  // 생명 5개
+            "/application/img/zero.png",  
+            "/application/img/one.png", 
+            "/application/img/two.png",
+            "/application/img/three.png", 
+            "/application/img/four.png",  
+            "/application/img/five.png" 
         };
 
-        // 초기 생명 상태 이미지 설정
         this.lifeImageView = new ImageView(new Image(getClass().getResourceAsStream(lifeImages[initialLives])));
         lifeImageView.setFitWidth(120); // 이미지 크기 조정
         lifeImageView.setFitHeight(40);
