@@ -21,10 +21,10 @@ public class DialogueScene {
     };
 
     private String[] characterImages = {
-        "/application/img/girl.png",   // 주인공 이미지
-        "/application/img/bossA.png",  // 보스 이미지
-        "/application/img/girl.png",  // 주인공 이미지
-        "/application/img/bossA.png"   // 보스 이미지
+        "/application/img/girl.png",  
+        "/application/img/bossA.png",  
+        "/application/img/girl.png",  
+        "/application/img/bossA.png"  
     };
 
     public Scene getScene(Stage primaryStage, GamePlay gamePlay) {

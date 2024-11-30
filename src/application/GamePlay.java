@@ -23,6 +23,10 @@ public class GamePlay {
     private static final double RUNNING_HEIGHT = 100;
     private static final double JUMPING_WIDTH = 120;
     private static final double JUMPING_HEIGHT = 120;
+     // 장애물을 Obstacle 클래스로 변경
+    private static final long COLLISION_COOLDOWN = 1_000_000_000L; // 재충돌 방지 시간 (1초)
+    
+    
     
     private boolean isSliding = false; // 슬라이드 상태를 나타내는 변수
     
@@ -46,7 +50,8 @@ public class GamePlay {
     private boolean isJumping = false;
     private static final double GRAVITY = 0.9;
     private static final double JUMP_STRENGTH = -20;
-    private List<ImageView> obstacles; // 장애물을 저장할 리스트
+    private List<Obstacle> obstacles; // 장애물 리스트 (Obstacle 객체 사용)
+
 
     private ImageView character;
     private ImageView enemy;
@@ -59,7 +64,7 @@ public class GamePlay {
     private int enemyHealth = 30;
     private List<Image> highObstacles; // 370용 이미지 리스트
     private List<Image> lowObstacles;  // 320용 이미지 리스트
-    private List<Circle> enemyProjectiles = new ArrayList<>();
+    private List<ImageView> enemyProjectiles = new ArrayList<>();
     private long startTime; // 게임 시작 시간
     private long lastProjectileTime = 0;
     
@@ -76,7 +81,7 @@ public class GamePlay {
     private int currentHealthState = 6; // 체력 상태를 나타내는 변수 (총 6단계: 30 ~ 0)
 
     public Scene getScene(Stage primaryStage) {
-        Pane root = new Pane();
+        root = new Pane();
         Scene scene = new Scene(root, 800, 500);
 
         // 배경 이미지 리스트 초기화
@@ -142,7 +147,7 @@ public class GamePlay {
             @Override
             public void handle(long now) {
                 if (!gameOver && !gameClear) {
-                	spawnItem(root, now); // 아이템 생성
+                   spawnItem(root, now); // 아이템 생성
                     updateItems(root); // 아이템 이동 및 삭제
                     update(now);  // 캐릭터 및 기타 요소 업데이트
                     if (inBattle && now - lastProjectileTime > 2_000_000_000) {
@@ -160,7 +165,7 @@ public class GamePlay {
     
  // 아이템 생성
     private void spawnItem(Pane root, long now) {
-    	if (inBattle) {
+       if (inBattle) {
             return; // 보스맵에서는 아이템 생성 중단
         }
         if (now - lastItemSpawnTime >= ITEM_SPAWN_INTERVAL) { // 0.3초마다 아이템 생성
@@ -204,40 +209,49 @@ public class GamePlay {
     }
  // 장애물 이미지 초기화 메서드
     private void initializeObstacleImages() {
-        highObstacles = new ArrayList<>();
-        highObstacles.add(new Image(getClass().getResourceAsStream("/application/img/gangsi.png")));
-        highObstacles.add(new Image(getClass().getResourceAsStream("/application/img/monsterred.png")));
-        highObstacles.add(new Image(getClass().getResourceAsStream("/application/img/monsterblue.png")));
-        highObstacles.add(new Image(getClass().getResourceAsStream("/application/img/jangsanbum.png")));
+        try {
+            highObstacles = new ArrayList<>();
+            highObstacles.add(new Image(getClass().getResourceAsStream("/application/img/gangsi.png")));
+            highObstacles.add(new Image(getClass().getResourceAsStream("/application/img/monsterred.png")));
+            highObstacles.add(new Image(getClass().getResourceAsStream("/application/img/monsterblue.png")));
+            highObstacles.add(new Image(getClass().getResourceAsStream("/application/img/jangsanbum.png")));
 
-        lowObstacles = new ArrayList<>();
-        lowObstacles.add(new Image(getClass().getResourceAsStream("/application/img/wisp.gif")));
-        lowObstacles.add(new Image(getClass().getResourceAsStream("/application/img/eyemonster.gif")));
+            lowObstacles = new ArrayList<>();
+            lowObstacles.add(new Image(getClass().getResourceAsStream("/application/img/wisp.gif")));
+            lowObstacles.add(new Image(getClass().getResourceAsStream("/application/img/eyemonster.gif")));
+        } catch (Exception e) {
+            System.out.println("이미지 로드 중 오류 발생: " + e.getMessage());
+        }
     }
+
 
     // 장애물 초기화 메서드
     private void initializeObstacles(Pane root) {
         obstacles = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            double randomY = (Math.random() < 0.5) ? 300 : 250; // Y 좌표 랜덤 선택
+            double randomY = (Math.random() < 0.5) ? 300 : 250;
             Image randomImage = (randomY == 300)
                 ? highObstacles.get((int) (Math.random() * highObstacles.size()))
                 : lowObstacles.get((int) (Math.random() * lowObstacles.size()));
-            
-            ImageView obstacle = new ImageView(randomImage);
-            obstacle.setFitWidth(100); // 적절한 크기로 설정
-            obstacle.setFitHeight(100);
-            obstacle.setX(800 + i * 300);
-            obstacle.setY(randomY);
-            
-            obstacles.add(obstacle);
-            root.getChildren().add(obstacle);
+
+            ImageView obstacleView = new ImageView(randomImage);
+            obstacleView.setFitWidth(100);
+            obstacleView.setFitHeight(100);
+            obstacleView.setX(800 + i * 300);
+            obstacleView.setY(randomY);
+
+            Obstacle obstacle = new Obstacle(obstacleView); // Obstacle 객체 생성
+            obstacles.add(obstacle); // 리스트에 추가
+            root.getChildren().add(obstacleView); // 화면에 추가
         }
     }
+
+
+
     // 발판 초기화 메서드 추가
     private void initializePlatform(Pane root) {
-    	// 발판 이미지 리스트 초기화 (높이를 지정하여 생성)
-    	platformImages = new ArrayList<>();
+       // 발판 이미지 리스트 초기화 (높이를 지정하여 생성)
+       platformImages = new ArrayList<>();
         platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding1.png"))); // 스테이지 1 발판
         platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding2.png"))); // 스테이지 2 발판
         platformImages.add(new Image(getClass().getResourceAsStream("/application/img/scaffolding3.png"))); // 스테이지 3 발판
@@ -262,7 +276,7 @@ public class GamePlay {
     }
     
     private void setupLabels(Pane root) {
-    	// 점수 배경 이미지
+       // 점수 배경 이미지
         ImageView scoreBackground = new ImageView(new Image(getClass().getResourceAsStream("/application/img/score.png")));
         scoreBackground.setFitWidth(120); // 배경 크기 조정
         scoreBackground.setFitHeight(40);
@@ -307,51 +321,51 @@ public class GamePlay {
     }
 
     private void setupKeyHandlers(Scene scene) {
-    	scene.setOnKeyPressed(event -> {
-    	    // 점프 로직
-    	    if (event.getCode() == KeyCode.SPACE && !isJumping && !gameOver && !gameClear && !isSliding) {
-    	        characterVelocityY = JUMP_STRENGTH;
-    	        isJumping = true;
-    	        character.setImage(new Image(getClass().getResourceAsStream("/application/img/jumpBy256.gif")));
-    	        character.setFitWidth(JUMPING_WIDTH);
-    	        character.setFitHeight(JUMPING_HEIGHT);
-    	    }
-    	    // 슬라이드 로직
-    	    if (event.getCode() == KeyCode.S && !isJumping && !isSliding && !gameOver && !gameClear) {
-    	        isSliding = true;
-    	        try {
-    	            character.setImage(new Image(getClass().getResourceAsStream("/application/img/slideBy256.png"))); // 슬라이드 이미지 적용
-    	        } catch (Exception e) {
-    	            System.out.println("슬라이드 이미지 로드 중 오류: " + e.getMessage());
-    	        }
-    	        character.setFitWidth(RUNNING_WIDTH); // 러닝 이미지 크기 유지
-    	        character.setFitHeight(RUNNING_HEIGHT); // 러닝 이미지 크기 유지
-    	        character.setY(300); // 슬라이드 시 Y 좌표를 350으로 고정
-    	    }
-    	    // 적 공격 로직
-    	    if (event.getCode() == KeyCode.A && inBattle && !gameOver && enemy.isVisible()) { 
-    	        attackEnemy(); // 적 공격 메서드 호출
-    	    }
-    	});
+       scene.setOnKeyPressed(event -> {
+           // 점프 로직
+           if (event.getCode() == KeyCode.SPACE && !isJumping && !gameOver && !gameClear && !isSliding) {
+               characterVelocityY = JUMP_STRENGTH;
+               isJumping = true;
+               character.setImage(new Image(getClass().getResourceAsStream("/application/img/jumpBy256.gif")));
+               character.setFitWidth(JUMPING_WIDTH);
+               character.setFitHeight(JUMPING_HEIGHT);
+           }
+           // 슬라이드 로직
+           if (event.getCode() == KeyCode.S && !isJumping && !isSliding && !gameOver && !gameClear) {
+               isSliding = true;
+               try {
+                   character.setImage(new Image(getClass().getResourceAsStream("/application/img/slideBy256.png"))); // 슬라이드 이미지 적용
+               } catch (Exception e) {
+                   System.out.println("슬라이드 이미지 로드 중 오류: " + e.getMessage());
+               }
+               character.setFitWidth(RUNNING_WIDTH); // 러닝 이미지 크기 유지
+               character.setFitHeight(RUNNING_HEIGHT); // 러닝 이미지 크기 유지
+               character.setY(300); // 슬라이드 시 Y 좌표를 350으로 고정
+           }
+           // 적 공격 로직
+           if (event.getCode() == KeyCode.A && inBattle && !gameOver && enemy.isVisible()) { 
+               attackEnemy(); // 적 공격 메서드 호출
+           }
+       });
 
-    	scene.setOnKeyReleased(event -> {
-    	    // 슬라이드에서 복구
-    	    if (event.getCode() == KeyCode.S && isSliding) {
-    	        isSliding = false;
-    	        try {
-    	            character.setImage(new Image(getClass().getResourceAsStream("/application/img/runningBy256.gif"))); // 원래 러닝 이미지 복구
-    	        } catch (Exception e) {
-    	            System.out.println("러닝 이미지 복구 중 오류: " + e.getMessage());
-    	        }
-    	        character.setY(350); // 원래 Y 좌표로 복구
-    	    }
-    	});
+       scene.setOnKeyReleased(event -> {
+           // 슬라이드에서 복구
+           if (event.getCode() == KeyCode.S && isSliding) {
+               isSliding = false;
+               try {
+                   character.setImage(new Image(getClass().getResourceAsStream("/application/img/runningBy256.gif"))); // 원래 러닝 이미지 복구
+               } catch (Exception e) {
+                   System.out.println("러닝 이미지 복구 중 오류: " + e.getMessage());
+               }
+               character.setY(350); // 원래 Y 좌표로 복구
+           }
+       });
 
     }
     
     // 적을 공격하는 메서드
     private void attackEnemy() {
-    	 // 적 체력을 1 감소
+        // 적 체력을 1 감소
         enemyHealth--;
 
      // 체력이 0 이상일 때만 체력 바 업데이트
@@ -383,7 +397,7 @@ public class GamePlay {
     
     // 전투에서 승리했을 때 처리
     private void winBattle() {
-    	inBattle = false; // 전투 상태 종료
+       inBattle = false; // 전투 상태 종료
         gameClear = true; // 게임 클리어 상태로 전환
 
         // 게임 클리어 화면으로 전환
@@ -393,7 +407,7 @@ public class GamePlay {
     }
     
     private void update(long now) {
-    	// 스테이지 전환 조건
+       // 스테이지 전환 조건
         if (!inBattle && now - stageStartTime >= STAGE_DURATION) {
             if (currentStage < TOTAL_STAGES) {
                 stageStartTime = now; // 새로운 스테이지 시작 시간 기록
@@ -453,52 +467,63 @@ public class GamePlay {
 
 
     private void handleObstacles() {
-        for (ImageView obstacle : obstacles) {
-            // 장애물 이동
-            obstacle.setX(obstacle.getX() - SCROLL_SPEED);
+        for (Obstacle obstacle : obstacles) {
+            ImageView obstacleView = obstacle.getImageView();
 
-            // 장애물이 화면 왼쪽을 벗어나면 재배치
-            if (obstacle.getX() < -50) {
+            // 장애물 이동
+            obstacleView.setX(obstacleView.getX() - SCROLL_SPEED);
+
+            // 화면 밖으로 나가면 재배치
+            if (obstacleView.getX() < -50) {
                 repositionObstacle(obstacle);
+                obstacle.setCollided(false); // 충돌 상태 초기화
             }
 
-            // 캐릭터와 장애물 충돌 체크
-            if (checkCollision(character, obstacle)) {
+            // 충돌 체크 (충돌 상태가 아닌 경우만)
+            if (!obstacle.hasCollided() && checkCollision(character, obstacleView)) {
                 reduceLife();
+                obstacle.setCollided(true); // 충돌 상태 설정
+                obstacle.setCollisionTime(System.nanoTime()); // 충돌 시간 기록
+            }
 
-                // 충돌 후 장애물 재배치
-                repositionObstacle(obstacle);
+            // 충돌 상태 초기화 (쿨타임 경과 시)
+            if (obstacle.hasCollided() && System.nanoTime() - obstacle.getCollisionTime() >= COLLISION_COOLDOWN) {
+                obstacle.setCollided(false);
             }
         }
     }
 
-    private void repositionObstacle(ImageView obstacle) {
+
+
+
+    private void repositionObstacle(Obstacle obstacle) {
         boolean isValidPosition;
         double newX, newY;
 
         do {
             isValidPosition = true;
-            newX = 800 + Math.random() * 300; // X 위치 랜덤 생성
-            newY = (Math.random() < 0.5) ? 300 : 250; // Y 위치 랜덤 선택
+            newX = 800 + Math.random() * 300; // X 위치 랜덤
+            newY = (Math.random() < 0.5) ? 300 : 250; // Y 위치 랜덤
 
             // 다른 장애물들과의 간격 확인
-            for (ImageView other : obstacles) {
-                if (other != obstacle && Math.abs(newX - other.getX()) < 200) { // 최소 간격 100픽셀
+            for (Obstacle other : obstacles) {
+                if (other != obstacle && Math.abs(newX - other.getImageView().getX()) < 200) {
                     isValidPosition = false;
                     break;
                 }
             }
         } while (!isValidPosition);
 
-        // 새 위치로 장애물 설정
         Image randomImage = (newY == 300)
             ? highObstacles.get((int) (Math.random() * highObstacles.size()))
             : lowObstacles.get((int) (Math.random() * lowObstacles.size()));
 
-        obstacle.setImage(randomImage); // 새로운 이미지 설정
-        obstacle.setX(newX); // 새 X 위치 설정
-        obstacle.setY(newY); // 새 Y 위치 설정
+        ImageView obstacleView = obstacle.getImageView();
+        obstacleView.setImage(randomImage); // 새로운 이미지 설정
+        obstacleView.setX(newX); // 새 위치 설정
+        obstacleView.setY(newY);
     }
+
 
 
     
@@ -521,11 +546,11 @@ public class GamePlay {
     
     // 생명 5개 깎이면 gameOver
     private void reduceLife() {
-    	// lifeLabel 대신 lifeIndicator로 수정
+       // lifeLabel 대신 lifeIndicator로 수정
         lifeIndicator.reduceLife();
-//        if (lifeIndicator.getLives() <= 0) {
-//            gameOver();
-//        }
+        if (lifeIndicator.getLives() <= 0) {
+            gameOver();
+        }
     }
     
     private void startBattle() {
@@ -535,9 +560,10 @@ public class GamePlay {
         healthBar.setVisible(true);
         
      // 장애물 및 아이템 제거
-        for (ImageView obstacle : obstacles) {
-            obstacle.setVisible(false); // 장애물 숨김
+        for (Obstacle obstacle : obstacles) {
+            obstacle.getImageView().setVisible(false); // 장애물 숨김
         }
+
         for (ImageView item : items) {
             item.setVisible(false); // 아이템 숨김
         }
@@ -545,33 +571,63 @@ public class GamePlay {
 
 
     private void spawnEnemyProjectile(Pane root) {
-        Circle projectile = new Circle(enemy.getX() - 10, enemy.getY() + enemy.getFitHeight() / 2, 5);
-        projectile.setFill(Color.DARKRED);
-        enemyProjectiles.add(projectile);
-        root.getChildren().add(projectile);
+        if (root == null) { // root가 null인지 확인
+            System.err.println("Error: root is null in spawnEnemyProjectile");
+            return;
+        }
+
+        ImageView projectile;
+        try {
+            projectile = new ImageView(new Image(getClass().getResourceAsStream("/application/img/wisp.png")));
+            projectile.setFitWidth(55);
+            projectile.setFitHeight(55);
+            projectile.setX(enemy.getX() - 10);
+            projectile.setY(enemy.getY() + enemy.getFitHeight() / 2);
+        } catch (Exception e) {
+            System.err.println("Error loading projectile image: " + e.getMessage());
+            return;
+        }
+
+        Platform.runLater(() -> {
+            enemyProjectiles.add(projectile);
+            root.getChildren().add(projectile);
+        });
     }
+
+
+
+
     
     private void updateProjectiles() {
-        Iterator<Circle> iterator = enemyProjectiles.iterator();
+        Iterator<ImageView> iterator = enemyProjectiles.iterator();
         while (iterator.hasNext()) {
-            Circle projectile = iterator.next();
-            projectile.setCenterX(projectile.getCenterX() - 5);
+            ImageView projectile = iterator.next();
+            Platform.runLater(() -> {
+                projectile.setX(projectile.getX() - 5); // 투사체 이동
+            });
 
             if (character.getBoundsInParent().intersects(projectile.getBoundsInParent())) {
-                reduceLife();
-                projectile.setVisible(false);
+                reduceLife(); // 생명 감소
+                Platform.runLater(() -> {
+                    root.getChildren().remove(projectile); // 투사체 삭제
+                });
                 iterator.remove();
+                continue;
             }
 
-            if (projectile.getCenterX() < -10) {
-                projectile.setVisible(false);
+            if (projectile.getX() < -10) {
+                Platform.runLater(() -> {
+                    root.getChildren().remove(projectile); // 투사체 삭제
+                });
                 iterator.remove();
             }
         }
     }
 
+
+
     private void gameOver() {
-    	gameOver = true;
+       gameOver = true;
 
         // 캐릭터를 게임 오버 상태로 변경
         character.setImage(new Image(getClass().getResourceAsStream("/application/img/loseBy256.gif")));
