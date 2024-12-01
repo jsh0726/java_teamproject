@@ -19,63 +19,76 @@ import java.util.List;
 
 
 public class GamePlay {
-    private static final double RUNNING_WIDTH = 100;
-    private static final double RUNNING_HEIGHT = 100;
-    private static final double JUMPING_WIDTH = 120;
-    private static final double JUMPING_HEIGHT = 120;
-    private static final long COLLISION_COOLDOWN = 1_000_000_000L; // 재충돌 방지 시간 (1초)
-    
-    private boolean isSliding = false; // 슬라이드 상태를 나타내는 변수
-    
-    private double SCROLL_SPEED = 3; // 초기 스크롤 속도
-    private static final int ITEM_SPACING = 50;
-    
-    private static final int TOTAL_STAGES = 4; // 총 4개의 스테이지
-    private int currentStage = 0; // 현재 스테이지
-    private static final long STAGE_DURATION = 30L * 1_000_000_000L; // 각 스테이지의 지속 시간 (15초)
-    private long stageStartTime; // 각 스테이지 시작 시간 기록
-    private List<Image> platformImages;
-    private ImageView platform;
-    
-    private List<ImageView> platforms; // 여러 발판을 관리하는 리스트
-    private static final double PLATFORM_HEIGHT = 20; // 발판 높이
-    private static final double PLATFORM_SCROLL_SPEED = 2; // 발판 스크롤 속도
+	// ------------------ 게임 기본 설정 ------------------
+	private static final double RUNNING_WIDTH = 100; // 캐릭터 기본 너비
+	private static final double RUNNING_HEIGHT = 100; // 캐릭터 기본 높이
+	private static final double JUMPING_WIDTH = 120; // 캐릭터 점프 시 너비
+	private static final double JUMPING_HEIGHT = 120; // 캐릭터 점프 시 높이
+	private static final long COLLISION_COOLDOWN = 1_000_000_000L; // 충돌 재감지 대기 시간 (1초)
 
-    
-    private double characterY = 300;
-    private double characterVelocityY = 0;
-    private boolean isJumping = false;
-    private static final double GRAVITY = 0.9;
-    private static final double JUMP_STRENGTH = -20;
-    private List<Obstacle> obstacles; // 장애물 리스트 (Obstacle 객체 사용)
+	private boolean isSliding = false; // 슬라이드 상태 플래그
+	private double SCROLL_SPEED = 3; // 초기 배경 스크롤 속도
+	private static final int ITEM_SPACING = 50; // 아이템 간격
 
+	// ------------------ 스테이지 관련 설정 ------------------
+	private static final int TOTAL_STAGES = 4; // 총 스테이지 개수
+	private static final long STAGE_DURATION = 10L * 1_000_000_000L; // 각 스테이지 지속 시간 (3초)
+	private int currentStage = 0; // 현재 진행 중인 스테이지 번호
+	private long stageStartTime; // 현재 스테이지 시작 시간
 
-    private ImageView character;
-    private ImageView enemy;
-    private Label  scoreLabel;
-    private boolean gameOver = false;
-    private boolean gameClear = false;
-    private boolean inBattle = false;
-    private int score = 0;
-    private int lives = 30;
-    private int enemyHealth = 30;
-    private List<Image> highObstacles; // 370용 이미지 리스트
-    private List<Image> lowObstacles;  // 320용 이미지 리스트
-    private List<ImageView> enemyProjectiles = new ArrayList<>();
-    private long startTime; // 게임 시작 시간
-    private long lastProjectileTime = 0;
-    
-    private List<ImageView> items = new ArrayList<>(); // 아이템 리스트
-    private long lastItemSpawnTime = 0; // 마지막 아이템 생성 시간
-    private static final long ITEM_SPAWN_INTERVAL = 300_000_000L; // 0.3초(나노초 단위)
-    
-    private List<Image> stageBackgrounds;
-    private ImageView background;
-    private LifeIndicator lifeIndicator;
-    private Label enemyHealthLabel;private Pane root;
-    // 체력바 관련 변수
-    private ImageView healthBar; // 체력바 이미지
-    private int currentHealthState = 6; // 체력 상태를 나타내는 변수 (총 6단계: 30 ~ 0)
+	// ------------------ 플랫폼 관련 설정 ------------------
+	private List<ImageView> platforms = new ArrayList<>(); // 플랫폼(발판) 이미지 리스트
+	private List<Image> platformImages; // 플랫폼 이미지 리스트
+	private ImageView platform; // 현재 표시 중인 플랫폼 이미지
+	private static final double PLATFORM_HEIGHT = 20; // 플랫폼 높이
+	private static final double PLATFORM_SCROLL_SPEED = 2; // 플랫폼 스크롤 속도
+
+	// ------------------ 캐릭터 관련 설정 ------------------
+	private double characterY = 300; // 캐릭터의 초기 Y좌표
+	private double characterVelocityY = 0; // 캐릭터 Y축 속도
+	private boolean isJumping = false; // 점프 상태 플래그
+	private static final double GRAVITY = 0.9; // 중력 가속도
+	private static final double JUMP_STRENGTH = -20; // 점프 힘
+	private ImageView character; // 캐릭터 이미지 뷰
+
+	// ------------------ 장애물 관련 설정 ------------------
+	private List<Obstacle> obstacles = new ArrayList<>(); // 장애물 리스트
+	private List<Image> highObstacles = new ArrayList<>(); // Y=370 장애물 이미지 리스트
+	private List<Image> lowObstacles = new ArrayList<>(); // Y=320 장애물 이미지 리스트
+
+	// ------------------ 전투 관련 설정 ------------------
+	private ImageView enemy; // 적 캐릭터 이미지
+	private boolean inBattle = false; // 전투 상태 플래그
+	private int enemyHealth = 30; // 적 체력
+	private List<ImageView> enemyProjectiles = new ArrayList<>(); // 적이 발사하는 투사체 리스트
+	private long lastProjectileTime = 0; // 마지막 투사체 생성 시간
+	private Label enemyHealthLabel; // 적 체력 표시 라벨
+
+	// ------------------ 아이템 관련 설정 ------------------
+	private List<ImageView> items = new ArrayList<>(); // 아이템 리스트
+	private long lastItemSpawnTime = 0; // 마지막 아이템 생성 시간
+	private static final long ITEM_SPAWN_INTERVAL = 300_000_000L; // 아이템 생성 간격 (0.3초)
+
+	// ------------------ 배경 및 그래픽 ------------------
+	private List<Image> stageBackgrounds; // 스테이지별 배경 이미지 리스트
+	private ImageView background; // 현재 배경 이미지 뷰
+
+	// ------------------ 게임 상태 및 UI ------------------
+	private Label scoreLabel; // 점수 표시 라벨
+	private boolean gameOver = false; // 게임 오버 상태 플래그
+	private boolean gameClear = false; // 게임 클리어 상태 플래그
+	private int score = 0; // 현재 점수
+	private int lives = 30; // 캐릭터 생명 개수
+	private long startTime; // 게임 시작 시간
+
+	// ------------------ 체력바 관련 설정 ------------------
+	private LifeIndicator lifeIndicator; // 체력바 표시용 클래스
+	private ImageView healthBar; // 체력바 이미지
+	private int currentHealthState = 6; // 체력 상태 단계 (30 ~ 0)
+
+	// ------------------ 화면 구성 ------------------
+	private Pane root; // 게임 루트 컨테이너
+
 
     public Scene getScene(Stage primaryStage) {
         root = new Pane();
@@ -570,9 +583,9 @@ public class GamePlay {
     // 생명 5개 깎이면 gameOver
     private void reduceLife() {
         lifeIndicator.reduceLife();
-//        if (lifeIndicator.getLives() <= 0) {
-//            gameOver();
-//        }
+        if (lifeIndicator.getLives() <= 0) {
+            gameOver();
+        }
     }
     
     private void startBattle() {

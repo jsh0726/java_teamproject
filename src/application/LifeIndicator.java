@@ -3,6 +3,7 @@ package application;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
+import javafx.scene.control.Label;
 
 public class LifeIndicator {
     private int lives;
