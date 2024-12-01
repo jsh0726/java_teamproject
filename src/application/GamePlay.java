@@ -23,10 +23,7 @@ public class GamePlay {
     private static final double RUNNING_HEIGHT = 100;
     private static final double JUMPING_WIDTH = 120;
     private static final double JUMPING_HEIGHT = 120;
-     // 장애물을 Obstacle 클래스로 변경
     private static final long COLLISION_COOLDOWN = 1_000_000_000L; // 재충돌 방지 시간 (1초)
-    
-    
     
     private boolean isSliding = false; // 슬라이드 상태를 나타내는 변수
     
@@ -55,7 +52,7 @@ public class GamePlay {
 
     private ImageView character;
     private ImageView enemy;
-    private Label  scoreLabel, battleLabel;
+    private Label  scoreLabel;
     private boolean gameOver = false;
     private boolean gameClear = false;
     private boolean inBattle = false;
@@ -122,7 +119,6 @@ public class GamePlay {
         // 라벨 생성
         scoreLabel = new Label("0");
         lifeIndicator = new LifeIndicator(5, root, 640, 20);
-        battleLabel = new Label("Fight the Enemy!");
         enemyHealthLabel = new Label(String.valueOf(enemyHealth));
 
         // 라벨 설정 및 추가
@@ -295,14 +291,6 @@ public class GamePlay {
     }
 
     private void setupMessageLabels(Pane root) {
-        // 전투 라벨
-        battleLabel.setTextFill(Color.PURPLE);
-        battleLabel.setStyle("-fx-font-size: 32px;");
-        battleLabel.setLayoutX(300);
-        battleLabel.setLayoutY(50);
-        battleLabel.setVisible(false);
-        root.getChildren().add(battleLabel);
-
         // 적 체력 라벨
         enemyHealthLabel.setLayoutX(750);
         enemyHealthLabel.setLayoutY(280);
@@ -548,14 +536,14 @@ public class GamePlay {
     private void reduceLife() {
        // lifeLabel 대신 lifeIndicator로 수정
         lifeIndicator.reduceLife();
-        if (lifeIndicator.getLives() <= 0) {
-            gameOver();
-        }
+//        if (lifeIndicator.getLives() <= 0) {
+//            gameOver();
+//        }
     }
     
     private void startBattle() {
         inBattle = true;
-        battleLabel.setVisible(true);
+        //battleLabel.setVisible(true);
         enemy.setVisible(true);
         healthBar.setVisible(true);
         
