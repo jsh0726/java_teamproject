@@ -32,7 +32,7 @@ public class GamePlay {
     
     private static final int TOTAL_STAGES = 4; // 총 4개의 스테이지
     private int currentStage = 0; // 현재 스테이지
-    private static final long STAGE_DURATION = 10L * 1_000_000_000L; // 각 스테이지의 지속 시간 (15초)
+    private static final long STAGE_DURATION = 30L * 1_000_000_000L; // 각 스테이지의 지속 시간 (15초)
     private long stageStartTime; // 각 스테이지 시작 시간 기록
     private List<Image> platformImages;
     private ImageView platform;
@@ -309,46 +309,81 @@ public class GamePlay {
     }
 
     private void setupKeyHandlers(Scene scene) {
-       scene.setOnKeyPressed(event -> {
-           // 점프 로직
-           if (event.getCode() == KeyCode.SPACE && !isJumping && !gameOver && !gameClear && !isSliding) {
-               characterVelocityY = JUMP_STRENGTH;
-               isJumping = true;
-               character.setImage(new Image(getClass().getResourceAsStream("/application/img/jumpBy256.gif")));
-               character.setFitWidth(JUMPING_WIDTH);
-               character.setFitHeight(JUMPING_HEIGHT);
-           }
-           // 슬라이드 로직
-           if (event.getCode() == KeyCode.S && !isJumping && !isSliding && !gameOver && !gameClear) {
-               isSliding = true;
-               try {
-                   character.setImage(new Image(getClass().getResourceAsStream("/application/img/slideBy256.png"))); // 슬라이드 이미지 적용
-               } catch (Exception e) {
-                   System.out.println("슬라이드 이미지 로드 중 오류: " + e.getMessage());
-               }
-               character.setFitWidth(RUNNING_WIDTH); // 러닝 이미지 크기 유지
-               character.setFitHeight(RUNNING_HEIGHT); // 러닝 이미지 크기 유지
-               character.setY(300); // 슬라이드 시 Y 좌표를 350으로 고정
-           }
-           // 적 공격 로직
-           if (event.getCode() == KeyCode.A && inBattle && !gameOver && enemy.isVisible()) { 
-               attackEnemy(); // 적 공격 메서드 호출
-           }
-       });
+        scene.setOnKeyPressed(event -> {
+            // 점프 로직
+            if (event.getCode() == KeyCode.SPACE && !isJumping && !gameOver && !gameClear && !isSliding) {
+                characterVelocityY = JUMP_STRENGTH;
+                isJumping = true;
+                character.setImage(new Image(getClass().getResourceAsStream("/application/img/jumpBy256.gif")));
+                character.setFitWidth(JUMPING_WIDTH);
+                character.setFitHeight(JUMPING_HEIGHT);
+            }
+            // 슬라이드 로직
+            if (event.getCode() == KeyCode.S && !isJumping && !isSliding && !gameOver && !gameClear) {
+                isSliding = true;
+                try {
+                    character.setImage(new Image(getClass().getResourceAsStream("/application/img/slideBy256.png"))); // 슬라이드 이미지 적용
+                } catch (Exception e) {
+                    System.out.println("슬라이드 이미지 로드 중 오류: " + e.getMessage());
+                }
+                character.setFitWidth(RUNNING_WIDTH); // 러닝 이미지 크기 유지
+                character.setFitHeight(RUNNING_HEIGHT); // 러닝 이미지 크기 유지
+                character.setY(300); // 슬라이드 시 Y 좌표를 300으로 고정
+            }
+            // 공격 로직
+            if (event.getCode() == KeyCode.A && inBattle && !gameOver && enemy.isVisible()) {
+                attackEnemy(); // 적 공격 메서드 호출
 
-       scene.setOnKeyReleased(event -> {
-           // 슬라이드에서 복구
-           if (event.getCode() == KeyCode.S && isSliding) {
-               isSliding = false;
-               try {
-                   character.setImage(new Image(getClass().getResourceAsStream("/application/img/runningBy256.gif"))); // 원래 러닝 이미지 복구
-               } catch (Exception e) {
-                   System.out.println("러닝 이미지 복구 중 오류: " + e.getMessage());
-               }
-               character.setY(350); // 원래 Y 좌표로 복구
-           }
-       });
+                // 공격 이미지 설정
+                try {
+                    character.setImage(new Image(getClass().getResourceAsStream("/application/img/attackBy256.png")));
+                    character.setFitWidth(RUNNING_WIDTH);
+                    character.setFitHeight(RUNNING_HEIGHT);
+                } catch (Exception e) {
+                    System.out.println("공격 이미지 로드 실패: " + e.getMessage());
+                }
 
+                // 일정 시간 후 기본 이미지 복원 (타이머 사용)
+                new javafx.animation.Timeline(
+                    new javafx.animation.KeyFrame(
+                        javafx.util.Duration.millis(500), // 0.5초 후 실행
+                        actionEvent -> {
+                            try {
+                                character.setImage(new Image(getClass().getResourceAsStream("/application/img/BasicBy256.png")));
+                            } catch (Exception e) {
+                                System.out.println("기본 이미지 복구 실패: " + e.getMessage());
+                            }
+                        }
+                    )
+                ).play();
+            }
+        });
+
+        scene.setOnKeyReleased(event -> {
+            // 슬라이드에서 복구
+            if (event.getCode() == KeyCode.S && isSliding) {
+                isSliding = false;
+                try {
+                    character.setImage(new Image(getClass().getResourceAsStream("/application/img/runningBy256.gif"))); // 원래 러닝 이미지 복구
+                } catch (Exception e) {
+                    System.out.println("러닝 이미지 복구 중 오류: " + e.getMessage());
+                }
+                character.setY(350); // 원래 Y 좌표로 복구
+            }
+        });
+
+        scene.setOnKeyReleased(event -> {
+            // 슬라이드에서 복구
+            if (event.getCode() == KeyCode.S && isSliding) {
+                isSliding = false;
+                try {
+                    character.setImage(new Image(getClass().getResourceAsStream("/application/img/runningBy256.gif"))); // 원래 러닝 이미지 복구
+                } catch (Exception e) {
+                    System.out.println("러닝 이미지 복구 중 오류: " + e.getMessage());
+                }
+                character.setY(350); // 원래 Y 좌표로 복구
+            }
+        });
     }
     
     // 적을 공격하는 메서드
@@ -534,7 +569,6 @@ public class GamePlay {
     
     // 생명 5개 깎이면 gameOver
     private void reduceLife() {
-       // lifeLabel 대신 lifeIndicator로 수정
         lifeIndicator.reduceLife();
 //        if (lifeIndicator.getLives() <= 0) {
 //            gameOver();
@@ -547,7 +581,16 @@ public class GamePlay {
         enemy.setVisible(true);
         healthBar.setVisible(true);
         
-     // 장애물 및 아이템 제거
+        // 보스맵에서 캐릭터 기본 이미지 변경
+        try {
+            character.setImage(new Image(getClass().getResourceAsStream("/application/img/BasicBy256.png")));
+            character.setFitWidth(RUNNING_WIDTH);
+            character.setFitHeight(RUNNING_HEIGHT);
+        } catch (Exception e) {
+            System.out.println("보스맵 기본 이미지 로드 실패: " + e.getMessage());
+        }
+        
+        // 장애물 및 아이템 제거
         for (Obstacle obstacle : obstacles) {
             obstacle.getImageView().setVisible(false); // 장애물 숨김
         }
